@@ -1,5 +1,5 @@
 #
-#Module name - T1_Pi_server
+#Module name - T4_Pi_server
 #Module Description -
 #       A socket server using python socket modules.
 #       Used to recieve data from a client over a network connection (wifi/ethernet)
@@ -16,16 +16,27 @@ import fcntl #linux specific (keep note)
 import struct
 import threading
 import time
+import numpy
 
-exitFlag = 0
-USAvgDistances = []
 global lastCommand
 lastCommand= ""
-dataInput = ""
-
 global serialConnected
 serialConnected = False
 global motorConn
+
+dataInput = ""
+exitFlag = 0
+USAvgDistances = []
+
+global tMat
+global theta
+global porterLocation
+global porterOrientation
+
+theta = 0.0
+tMat = numpy.array([0, 0])
+porterLocation = numpy.array([0, 0, 0])
+porterOrientation = 0.0 # from starting heading
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -35,7 +46,6 @@ def get_ip_address(ifname):
         0x8915,  # SIOCGIFADDR
         struct.pack('256s', ifname[:15])
     )[20:24])
-
 
 class multiThreadBase (threading.Thread):
     def __init__(self, threadID, name):
@@ -47,11 +57,54 @@ class SerialThread (threading.Thread):
     def __init__(self, threadID, name):
         threading.Thread.__init__(self)
         self.threadID = threadID
+        self.dataReady = 0
+        self.actionState = 0
 
     def run(self):
         print "Starting " + self.name
-        send_serial_data(self.name)
+        while not exitFlag:
+            if self.dataReady:
+                if self.actionState == 0:
+                    try:
+                        self.send_serial_data()
+                    except Exception as e:
+                        print ("ERROR - " + str(e))
+                        try:
+                            print ("Trying to open serial port")
+                            motorConn.open()
+                            serialConnected = True
+                        except Exception as e:
+                            print("ERROR - Serial port couldn't be opened :( : " + str(e))
+                        finally:
+                            print ("No serial Comms... Looping back to listening mode")
+            self.read_serial_data()
+            time.sleep(1.5)
         print "Exiting " + self.name
+
+    def send_serial_data(self):
+        # while not exitFlag:
+        print("Instructing to move as " + lastCommand)
+        motorConn.write(lastCommand)
+        print("Successfully sent...")
+        self.actionState = 4
+
+    def read_serial_data(self):
+        motorInput = motorConn.readline()
+        print ("motor says " + motorInput)
+        if motorInput == "3": #recieved
+            self.actionState = 3
+            print ("Command successfully received by motor...")
+        elif motorInput == "2":
+            print ("Motor actuating command...")
+            self.actionState = 2
+        elif motorInput == "1":
+            print ("Motor actuation finished...")
+            self.actionState = 1
+        elif motorInput == "5":
+            print ("ERROR TRYING TO EXECUTE COMMAND :( ...")
+            self.actionState = 5
+
+
 
 class usDataThread (multiThreadBase):
     def __init__(self, threadID, name):
@@ -76,26 +129,20 @@ class usDataThread (multiThreadBase):
             USAvgDistances[i] = USAvgDistances[i] + (self.rawUSdata[i] - USAvgDistances[i])/n
 
 
-def send_serial_data(threadName):
-    while not exitFlag:
-        try:
-            print("Instructing to go at " + lastCommand)
-            motorConn.write(lastCommand)
+def simpTransform():
+    porterLocation = porterLocation + tMat
+    porterOrientation = porterOrientation + theta
 
-            print("Successfully sent...")
-            #print ("Motor says - " + motorConn.readline())
-        except Exception as e:
-            print ("ERROR - " + str(e))
-            try:
-                print ("Trying to open serial port")
-                motorConn.open()
-                serialConnected = True
-            except Exception as e:
-                print("ERROR - Serial port couldn't be opened :( : " + str(e))
-            finally:
-                print ("No serial Comms... Looping back to listening mode")
-        time.sleep(1.5)
 
+def commandToTrans():
+    if lastCommand[0] == "F":
+        tMat[0] = lastCommand[1:len(lastCommand)]
+    elif lastCommand[0] == "B":
+        tMat[1] = lastCommand[1:len(lastCommand)]
+    elif lastCommand[0] == "L":
+        theta = lastCommand[1:len(lastCommand)]
+    elif lastCommand[0] == "R":
+        theta = (-1) * lastCommand[1:len(lastCommand)]
 
 #set the server address and port
 print("Setting up sockets...")
@@ -144,12 +191,13 @@ while True:
             break
         else:
             print ("Client says - " + dataInput)
-            lastCommand = dataInput
-            # if dataInput[0] == "#":
-            #     print ("Valid Command")
-            #     lastCommand = dataInput[1:len(dataInput)]
-            # else:
-            #     print ("Invalid Command")
+            #lastCommand = dataInput
+            if dataInput[0] == "#":
+                print ("Valid Command")
+                lastCommand = dataInput[1:len(dataInput)]
+                commandToTrans()
+            else:
+                print ("Invalid Command")
 
         print ("")
     #shut down the server

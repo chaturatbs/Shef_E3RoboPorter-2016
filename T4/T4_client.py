@@ -14,8 +14,6 @@ import socket
 import sys
 from msvcrt import getch
 
-
-
 #define variables for speed/angle/direction
 
 
