@@ -40,11 +40,11 @@
       <file leaf-file-name="T4_server.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/T4_server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="441">
-              <caret line="188" column="17" selection-start-line="188" selection-start-column="17" selection-end-line="188" selection-end-column="17" />
+            <state relative-caret-position="-289">
+              <caret line="37" column="0" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
               <folding>
                 <element signature="e#392#405#0" expanded="true" />
-                <element signature="e#900#1133#0" expanded="false" />
+                <element signature="e#951#1184#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -364,7 +364,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5604396" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -420,7 +420,7 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -441,7 +441,28 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/T4_client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="14" column="24" selection-start-line="14" selection-start-column="24" selection-end-line="14" selection-end-column="24" />
+          <folding>
+            <element signature="e#299#312#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/T4_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#392#405#0" expanded="true" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -462,7 +483,7 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -483,7 +504,7 @@
           <caret line="116" column="64" selection-start-line="116" selection-start-column="64" selection-end-line="116" selection-end-column="64" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -504,7 +525,7 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -525,7 +546,7 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -546,7 +567,7 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -567,7 +588,7 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -584,11 +605,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/T4_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="441">
-          <caret line="188" column="17" selection-start-line="188" selection-start-column="17" selection-end-line="188" selection-end-column="17" />
+        <state relative-caret-position="-289">
+          <caret line="37" column="0" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
           <folding>
             <element signature="e#392#405#0" expanded="true" />
-            <element signature="e#900#1133#0" expanded="false" />
+            <element signature="e#951#1184#0" expanded="false" />
           </folding>
         </state>
       </provider>

@@ -20,9 +20,12 @@ import numpy
 
 global lastCommand
 lastCommand= ""
-global serialConnected
-serialConnected = False
+global motorConnected
+motorConnected = False
+global USConnected
+USConnected = False
 global motorConn
+global USConn
 
 dataInput = ""
 exitFlag = 0
@@ -105,28 +108,46 @@ class SerialThread (threading.Thread):
             self.actionState = 5
 
 
-
 class usDataThread (multiThreadBase):
     def __init__(self, threadID, name):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.rawUSdata = []
+        self.rawUSdata = [0.,0.,0.,0.,0.,0.]
         self.inputBuf = ""
 
     def run(self):
         print "Starting " + self.name
-        self.getUSvector()
-        self.mAverage(5)
+        while not exitFlag:
+            try:
+                self.getUSvector()
+                self.mAverage(5)
+            except Exception as e:
+                print ("ERROR - " + str(e))
+                try:
+                    print ("Trying to open serial port")
+                    USConn.open()
+                    serialConnected = True
+                except Exception as e:
+                    print("ERROR - Serial port couldn't be opened :( : " + str(e))
+                finally:
+                    print ("No serial Comms... Looping back to listening mode")
+
+            self.US_safety_interrupt()
         print "Exiting " + self.name
 
     def getUSvector(self):
-        pass
+        self.inputBuf = USConn.readline()
+        self.rawUSdata = self.inputBuf.split(",")
 
     def mAverage(self, n):
         i = 0
         for i in [0, 6]:
             USAvgDistances[i] = USAvgDistances[i] + (self.rawUSdata[i] - USAvgDistances[i])/n
+
+    def US_safety_interrupt(self):
+        if USAvgDistances[1] < 30:
+            motorConn.write("X")
 
 
 def simpTransform():
@@ -146,7 +167,7 @@ def commandToTrans():
 
 #set the server address and port
 print("Setting up sockets...")
-HOST =  get_ip_address('wlan0') #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
+HOST = get_ip_address('wlan0') #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
 PORT = 5002
 
 #create a socket to establish a server
@@ -160,15 +181,28 @@ s.listen(1)
 
 #setup serial connection to motor controller
 print("Trying to connect to serial devices")
+print("Trying to connect to motor controller")
 try:
     motorConn = serial.Serial('/dev/ttyACM0', 19200) #check this
-    serialConnected = True
+    motorConnected = True
     print ('Connected to serial port /dev/ttyACM0')
 except Exception as e:
     print ('Unable to establish serial comms to port /dev/ttyACM0')
 
 serialThread = SerialThread(1, "serial com thread")
 serialThread.start()
+
+
+print("Trying to connect to Ultrasonic controller")
+try:
+    USConn= serial.Serial('/dev/ttyACM1', 19200) #check this
+    USConnected = True
+    print ('Connected to serial port /dev/ttyACM1')
+except Exception as e:
+    print ('Unable to establish serial comms to port /dev/ttyACM1')
+
+USthread = usDataThread(1, "US data thread")
+USthread.start()
 
 while True:
     #for each connection received create a tunnel to the client
