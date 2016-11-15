@@ -29,7 +29,7 @@ global USConn
 
 dataInput = ""
 exitFlag = 0
-USAvgDistances = []
+USAvgDistances = [0.,0.,0.,0.,0.,0.]
 
 global tMat
 global theta
@@ -40,6 +40,9 @@ theta = 0.0
 tMat = numpy.array([0, 0])
 porterLocation = numpy.array([0, 0, 0])
 porterOrientation = 0.0 # from starting heading
+localCtrl = True
+sysRunning = False
+cmdExpecting = False
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,51 +63,53 @@ class SerialThread (threading.Thread):
     def __init__(self, threadID, name):
         threading.Thread.__init__(self)
         self.threadID = threadID
-        self.dataReady = 0
+        self.name = name
+        self.dataReady = 1
         self.actionState = 0
 
     def run(self):
         print "Starting " + self.name
         while not exitFlag:
             if self.dataReady:
-                if self.actionState == 0:
+                if self.actionState == 1:
                     try:
+                        print ("trying to send data")
                         self.send_serial_data()
                     except Exception as e:
-                        print ("ERROR - " + str(e))
+                        print (self.name + ": ERROR - " + str(e))
                         try:
-                            print ("Trying to open serial port")
+                            print (self.name + ": Trying to open serial port")
                             motorConn.open()
                             serialConnected = True
                         except Exception as e:
-                            print("ERROR - Serial port couldn't be opened :( : " + str(e))
+                            print(self.name + ": ERROR - Motor port couldn't be opened :( : " + str(e))
                         finally:
-                            print ("No serial Comms... Looping back to listening mode")
+                            print (self.name + ": No Motor Comms... Looping back to listening mode")
             self.read_serial_data()
             time.sleep(1.5)
         print "Exiting " + self.name
 
     def send_serial_data(self):
         # while not exitFlag:
-        print("Instructing to move as " + lastCommand)
+        print(self.name + ": Instructing to move as - " + lastCommand)
         motorConn.write(lastCommand)
-        print("Successfully sent...")
+        print(self.name + ": Successfully sent...")
         self.actionState = 4
 
     def read_serial_data(self):
         motorInput = motorConn.readline()
-        print ("motor says " + motorInput)
-        if motorInput == "3": #recieved
+        print (self.name + ": motor says " + motorInput)
+        if motorInput == "3\r\n": #recieved
             self.actionState = 3
-            print ("Command successfully received by motor...")
-        elif motorInput == "2":
-            print ("Motor actuating command...")
+            print (self.name + " - Command successfully received by motor...")
+        elif motorInput == "2\r\n":
+            print (self.name + "- Motor actuating command...")
             self.actionState = 2
-        elif motorInput == "1":
-            print ("Motor actuation finished...")
+        elif motorInput == "1\r\n":
+            print (self.name + "- Motor actuation finished... ready to accept new data :) ")
             self.actionState = 1
-        elif motorInput == "5":
-            print ("ERROR TRYING TO EXECUTE COMMAND :( ...")
+        elif motorInput == "5\r\n":
+            print (self.name + "- ERROR TRYING TO EXECUTE COMMAND :( ...")
             self.actionState = 5
 
 
@@ -115,6 +120,7 @@ class usDataThread (multiThreadBase):
         self.name = name
         self.rawUSdata = [0.,0.,0.,0.,0.,0.]
         self.inputBuf = ""
+        self.errorCount = 0
 
     def run(self):
         print "Starting " + self.name
@@ -123,36 +129,58 @@ class usDataThread (multiThreadBase):
                 self.getUSvector()
                 self.mAverage(5)
             except Exception as e:
-                print ("ERROR - " + str(e))
+                self.errorCount += 1
+                print (self.name + ": ERROR - " + str(e))
+
                 try:
-                    print ("Trying to open serial port")
+                    print (self.name + ":Trying to open serial port")
                     USConn.open()
                     serialConnected = True
                 except Exception as e:
-                    print("ERROR - Serial port couldn't be opened :( : " + str(e))
+                    self.errorCount += 1
+                    print(self.name + ": ERROR - Ultrasonic port couldn't be opened :( : " + str(e))
                 finally:
-                    print ("No serial Comms... Looping back to listening mode")
+                    print (self.name + ": No Ultrasonic comms... Halting... ")
+                    lastCommand = "X"
+
+            if self.errorCount > 3:
+                print ("Consecutive Exceptions... pausing execution...")
+                self.errorCount = 0
+                time.sleep(3)
 
             self.US_safety_interrupt()
+            time.sleep(0.1)
         print "Exiting " + self.name
 
     def getUSvector(self):
-        self.inputBuf = USConn.readline()
-        self.rawUSdata = self.inputBuf.split(",")
+        pass
+        # try:
+        #     print (self.name + ": trying to get US data")
+        #     self.inputBuf = USConn.readline()
+        #     self.rawUSdata = float(self.inputBuf.split(","))
+        # except Exception as e:
+        #     self.errorCount += 1
+        #     print (self.name + ": ERROR trying to get US data - " + e)
 
     def mAverage(self, n):
-        i = 0
-        for i in [0, 6]:
-            USAvgDistances[i] = USAvgDistances[i] + (self.rawUSdata[i] - USAvgDistances[i])/n
+        pass
+        # i = 1
+        # for i in [1, 6]:
+        #     USAvgDistances[i] = USAvgDistances[i] + (self.rawUSdata[i] - USAvgDistances[i])/n
 
     def US_safety_interrupt(self):
-        if USAvgDistances[1] < 30:
-            motorConn.write("X")
+        try:
+            if USAvgDistances[1] < 30:
+                motorConn.write("X")
+        except Exception as e:
+            self.errorCount += 1
+            print (self.name + ": ERROR in US_safety_interrupt - " + e)
 
 
 def simpTransform():
-    porterLocation = porterLocation + tMat
-    porterOrientation = porterOrientation + theta
+    pass
+    # porterLocation = porterLocation + tMat
+    # porterOrientation = porterOrientation + theta
 
 
 def commandToTrans():
@@ -165,80 +193,113 @@ def commandToTrans():
     elif lastCommand[0] == "R":
         theta = (-1) * lastCommand[1:len(lastCommand)]
 
-#set the server address and port
-print("Setting up sockets...")
-HOST = get_ip_address('wlan0') #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
-PORT = 5002
 
-#create a socket to establish a server
-print("Binding the socket...")
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((HOST, PORT))
-
-#listen to incoming connections on PORT
-print 'Socket opened at ', HOST, 'listening to port ', PORT, '\n'
-s.listen(1)
+print ("Starting system...")
+sysRunning = True
 
 #setup serial connection to motor controller
 print("Trying to connect to serial devices")
-print("Trying to connect to motor controller")
-try:
-    motorConn = serial.Serial('/dev/ttyACM0', 19200) #check this
-    motorConnected = True
-    print ('Connected to serial port /dev/ttyACM0')
-except Exception as e:
-    print ('Unable to establish serial comms to port /dev/ttyACM0')
 
-serialThread = SerialThread(1, "serial com thread")
-serialThread.start()
-
-
-print("Trying to connect to Ultrasonic controller")
-try:
-    USConn= serial.Serial('/dev/ttyACM1', 19200) #check this
-    USConnected = True
-    print ('Connected to serial port /dev/ttyACM1')
-except Exception as e:
-    print ('Unable to establish serial comms to port /dev/ttyACM1')
-
-USthread = usDataThread(1, "US data thread")
-USthread.start()
-
-while True:
-    #for each connection received create a tunnel to the client
-    print ("ready for a new client to connect...")
-    clientConnection, address = s.accept()
-    print 'Connected by', address
-
-    #send welcome message
-    print ("Sending welcome message...")
-    clientConnection.send('Connection ack')
-    dataInput = clientConnection.recv(1024)
-    print ("Client says - " + dataInput)
+dataInput = raw_input("Connect to motor Controller... ? (Y/N)")
+if dataInput == "y":
     dataInput = ""
+    print("Trying to connect to motor controller")
+    try:
+        motorConn = serial.Serial('/dev/ttyACM0', 19200)
+        motorConnected = True
+        print ('Connected to serial port /dev/ttyACM0')
+    except Exception as e:
+        print ('Unable to establish serial comms to port /dev/ttyACM0')
 
-    while True:
+    serialThread = SerialThread(1, "#Serial com thread")
+    serialThread.start()
+
+
+dataInput = raw_input("Connect Ultrasonic Controller... ? (Y/N)")
+if dataInput == "y":
+    dataInput = ""
+    print("Trying to connect to Ultrasonic controller")
+    try:
+        USConn = serial.Serial('/dev/ttyACM1', 19200)
+        USConnected = True
+        print ('Connected to serial port /dev/ttyACM1')
+    except Exception as e:
+        print ('Unable to establish serial comms to port /dev/ttyACM1')
+
+    USthread = usDataThread(2, "#US data thread")
+    USthread.start()
+
+
+dataInput = raw_input("Local Comms...? (y/n)")
+if dataInput == "n":
+    localCtrl = False
+    #set the server address and port
+    print("Setting up sockets...")
+    HOST = get_ip_address('wlan0') #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
+    PORT = 5002
+
+    #create a socket to establish a server
+    print("Binding the socket...")
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((HOST, PORT))
+
+    #listen to incoming connections on PORT
+    print 'Socket opened at ', HOST, 'listening to port ', PORT, '\n'
+    s.listen(1)
+
+
+while sysRunning:
+    if not localCtrl:
+        #for each connection received create a tunnel to the client
+        print ("ready for a new client to connect...")
+        clientConnection, address = s.accept()
+        print 'Connected by', address
+
+        #send welcome message
+        print ("Sending welcome message...")
+        clientConnection.send('Connection ack')
         dataInput = clientConnection.recv(1024)
+        print ("Client says - " + dataInput)
+        dataInput = ""
+
+    cmdExpecting = True
+
+    while cmdExpecting:
+        print ("Motor commands are expecting...")
+        if not localCtrl:
+            dataInput = clientConnection.recv(1024)
+        else:
+            dataInput = raw_input("Please Enter Commands on local terminal...")
+
         if dataInput == "e":
+            cmdExpecting = False
             break
         elif dataInput == "q":
-            break
+            cmdExpecting = False
+            sysRunning = False
         else:
             print ("Client says - " + dataInput)
-            #lastCommand = dataInput
             if dataInput[0] == "#":
                 print ("Valid Command")
                 lastCommand = dataInput[1:len(dataInput)]
-                commandToTrans()
+                if not lastCommand[0] == "X":
+                    commandToTrans()
+                else:
+                    motorConn.write(lastCommand)
             else:
                 print ("Invalid Command")
-
+        dataInput = ""
         print ("")
-    #shut down the server
-    clientConnection.close()
-    print ("client at " + str(address) + " closed the connection ")
-    if dataInput == "q":
-        print ("Shutting down the server at " + HOST + "...")
-        exitFlag = 1
-        s.close()
-        break
+
+    if not localCtrl:
+        #shut down the server
+        clientConnection.close()
+        print ("client at " + str(address) + " closed the connection ")
+    else:
+        print ("Use q to shutdown system... ")
+        print ("Looping back to the start...")
+
+exitFlag = 1
+print ("Shutting down the server at " + HOST + "...")
+if not localCtrl:
+    s.close()
