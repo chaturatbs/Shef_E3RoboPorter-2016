@@ -12,10 +12,17 @@
 Servo test1; //Right
 Servo test2; //Left
 
+#define leftSense 3
+#define rightSense 2
+#define ppr 130
+#define radius 10
+
 volatile int speedval = 90;
 volatile int count = 0;
 
-int speedOffset = 30; //offset from 90*
+float vLeft = 0;
+float vRight = 0;
+int speedOffset = 50; //offset from 90*
 int dist = 0;
 char dir = 0;
 char cmdState = 1;
@@ -37,6 +44,8 @@ void setup() {
   test1.write(90);
   test2.write(90);
 
+  pinMode(rightSense, INPUT);
+  pinMode(leftSense, INPUT);
   // Set up timer interrupt
   TCCR2A = 0;
   TCCR2B = 0;
@@ -50,7 +59,7 @@ void setup() {
 }
 
 ISR(TIMER2_COMPA_vect) {
-  if (count > 1000){ // Roughly 0.5s
+  if (count > 200){ // Roughly 0.5s
 //    //if (speedval != 90){
 //    speedval = 90;
 //    //Serial.println("resetting motor...");
@@ -58,13 +67,23 @@ ISR(TIMER2_COMPA_vect) {
 //    test2.write(speedval);
 //    //}
     count = 0;
-    cmdState = 1;
-    //Serial.println(cmdState, DEC);
+    //cmdState = 1;
+    Serial.println(cmdState, DEC);
   } else {
     count++;
   }
 }
 
+void getPulseWidth(){
+  float rightPW = 0;
+  float leftPW = 0;
+  
+  rightPW = pulseIn(rightSense, HIGH, 60000);
+  leftPW = pulseIn(leftSense, HIGH, 60000);
+
+  vRight = 60000000/(rightPW*ppr);
+  vLeft = 60000000/(leftPW*ppr);  
+}
 char motorActuator(int dir, int dist){
   int sRight = 0;
   int sLeft = 0;
@@ -78,7 +97,6 @@ char motorActuator(int dir, int dist){
         tDelay = 2000;
         break;
       case 2: //Reverse
-        speedOffset = 20;
         sRight = 90-speedOffset;
         sLeft = 90-speedOffset;
         tDelay = 2000;
@@ -149,6 +167,11 @@ void loop() {
         motorActuator(dir, dist);
       }
   }
-  Serial.println(cmdState, DEC);
+  //Serial.println(cmdState, DEC);
+  getPulseWidth();
+  Serial.print(vRight);
+  Serial.print(",");
+  Serial.print(vLeft);
+  Serial.println();
   delay(10);
 }

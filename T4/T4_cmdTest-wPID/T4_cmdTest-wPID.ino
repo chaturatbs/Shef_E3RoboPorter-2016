@@ -12,10 +12,15 @@
 Servo test1; //Right
 Servo test2; //Left
 
+#define leftSense 1
+#define rightSense 2
+
 volatile int speedval = 90;
 volatile int count = 0;
 
-int speedOffset = 30; //offset from 90*
+float vLeft = 0;
+float vRight = 0;
+int speedOffset = 50; //offset from 90*
 int dist = 0;
 char dir = 0;
 char cmdState = 1;
@@ -50,7 +55,7 @@ void setup() {
 }
 
 ISR(TIMER2_COMPA_vect) {
-  if (count > 1000){ // Roughly 0.5s
+  if (count > 200){ // Roughly 0.5s
 //    //if (speedval != 90){
 //    speedval = 90;
 //    //Serial.println("resetting motor...");
@@ -65,6 +70,14 @@ ISR(TIMER2_COMPA_vect) {
   }
 }
 
+void getPulseWidth(){
+  float rightPW = 0;
+  float leftPW = 0;
+  
+  rightPW = pulseIn(rightSense, HIGH, 30000);
+  leftPW = pulseIn(leftSense, HIGH, 30000);
+  
+}
 char motorActuator(int dir, int dist){
   int sRight = 0;
   int sLeft = 0;
@@ -78,7 +91,6 @@ char motorActuator(int dir, int dist){
         tDelay = 2000;
         break;
       case 2: //Reverse
-        speedOffset = 20;
         sRight = 90-speedOffset;
         sLeft = 90-speedOffset;
         tDelay = 2000;

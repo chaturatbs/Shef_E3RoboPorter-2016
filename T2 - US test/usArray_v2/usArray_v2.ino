@@ -63,7 +63,7 @@ int usMeasure (int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
 
   //measure pulse
-  duration = pulseIn(echoPin, HIGH, 60000);
+  duration = pulseIn(echoPin, HIGH, 30000);
   distance = duration/58; 
   if (distance > 300) {
     distance = 300;
@@ -76,7 +76,7 @@ int usMeasure (int trigPin, int echoPin) {
 }
 
 void setup() {
-  Serial.begin (9600);
+  Serial.begin (19200);
   pinMode(c_trig, OUTPUT);
   pinMode(c_echo, INPUT);
   pinMode(fl_trig, OUTPUT);
