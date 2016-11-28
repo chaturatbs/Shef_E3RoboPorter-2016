@@ -55,7 +55,7 @@ void setup() {
   sense_r[1] = porter_ctr[1];
 
   printArray(Serial.list());
-  usPort = new Serial(this, Serial.list()[0], 9600);
+  usPort = new Serial(this, Serial.list()[0], 19200);
 
   int j = 0;
 

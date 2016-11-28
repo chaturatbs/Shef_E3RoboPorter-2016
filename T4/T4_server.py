@@ -30,6 +30,8 @@ global dataReady
 dataReady = False
 global USAvgDistances
 USAvgDistances = [0.,0.,0.,0.,0.,0.]
+global obstruction
+obstruction = False
 
 dataInput = ""
 exitFlag = 0
@@ -62,6 +64,28 @@ class multiThreadBase (threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
+        self.avgRuntime = 0.
+        self.startTime = 0.
+        self.endTime = 0.
+        self.avgCounter = 0
+        self.loopDebugInterval = 10
+
+
+    def loopStartFlag (self):
+        self.startTime = time.localtime()
+        pass
+
+    def loopEndFlag (self):
+        self.startTime = time.localtime()
+        pass
+
+    def loopRunTime (self):
+        self.avgRuntime += ((self.endTime - self.startTime) - self.avgRuntime)/self.loopDebugInterval
+        self.avgCounter += 1
+
+        if self.avgCounter == self.loopDebugInterval :
+            print (self.name + " Avg loop Runtime - " + str(self.avgRuntime))
+            self.avgCounter = 0
 
 class SerialThread (threading.Thread):
     def __init__(self, threadID, name):
@@ -71,36 +95,54 @@ class SerialThread (threading.Thread):
         #self.dataReady = 0
         self.actionState = 0
         self.debug = False
+        self.startTime = 0.
+        self.endTime = 0.
+        self.avgCounter = 0
+        self.loopDebugInterval = 10
+        self.avgRuntime = 0
 
     def run(self):
         print "Starting " + self.name
         while not exitFlag:
-            if dataReady:
+            self.loopStartFlag()
+            if obstruction :
+                print (self.name + " OBSTRUCTION! :( ")
+                self.send_serial_data("X")
+
+            elif dataReady:
                 print (self.name + " data Ready")
                 #if self.actionState == 1:
                 try:
+                    #if freeToMove == False:
+                        #print(self.name + "Obstruction.. cant move...")
                     print (self.name + " trying to send data")
-                    self.send_serial_data()
+                    self.send_serial_data(lastCommand)
                 except Exception as e:
                     print (self.name + ": ERROR - " + str(e))
                     try:
                         print (self.name + ": Trying to open serial port")
                         motorConn.open()
-                        serialConnected = True
+                        #serialConnected = True
                     except Exception as e:
                         print(self.name + ": ERROR - Motor port couldn't be opened :( : " + str(e))
                     finally:
                         print (self.name + ": No Motor Comms... Looping back to listening mode")
             self.read_serial_data()
-            time.sleep(0.01)
+            if self.debug:
+                time.sleep(1)
+            else:
+                time.sleep(0.001)
+            #self.loopEndFlag()
+            #self.loopRunTime()
         print "Exiting " + self.name
 
-    def send_serial_data(self):
+    def send_serial_data(self, sendCommand):
         # while not exitFlag:
         global dataReady
 
-        print(self.name + ": Instructing to move as - " + lastCommand)
-        motorConn.write(lastCommand)
+        print(self.name + ": Instructing to move as - " + sendCommand)
+        motorConn.write(sendCommand)
+        #if lastCommand[0] != "X":
         dataReady = False
         if self.debug:
             print(self.name + ": Successfully sent...")
@@ -125,6 +167,21 @@ class SerialThread (threading.Thread):
             print (self.name + "- ERROR TRYING TO EXECUTE COMMAND :( ...")
             self.actionState = 5
 
+    def loopStartFlag (self):
+        self.startTime = time.localtime()
+        pass
+
+    def loopEndFlag (self):
+        self.startTime = time.localtime()
+        pass
+
+    def loopRunTime (self):
+        self.avgRuntime += ((self.endTime - self.startTime) - self.avgRuntime)/self.loopDebugInterval
+        self.avgCounter += 1
+
+        if self.avgCounter == self.loopDebugInterval :
+            print (self.name + " Avg loop Runtime - " + str(self.avgRuntime))
+            self.avgCounter = 0
 
 class usDataThread (multiThreadBase):
     def __init__(self, threadID, name):
@@ -140,6 +197,7 @@ class usDataThread (multiThreadBase):
         global lastCommand
         print "Starting " + self.name
         while not exitFlag:
+            #self.loopStartFlag()
             try:
                 self.getUSvector()
                 self.mAverage(5)
@@ -164,8 +222,14 @@ class usDataThread (multiThreadBase):
                 time.sleep(3)
 
             self.US_safety_interrupt()
-            time.sleep(0.01)
+            if self.debug:
+                time.sleep(1)
+            else:
+                time.sleep(0.01)
+
             #USConn.flush()
+            #self.loopEndFlag()
+            #self.loopRunTime()
         print "Exiting " + self.name
 
     def getUSvector(self):
@@ -175,6 +239,7 @@ class usDataThread (multiThreadBase):
             if self.debug:
                 print (self.name + ": trying to get US data")
             self.inputBuf = USConn.readline()
+            self.inputBuf.rstrip("\n\r")
             self.rawUSdata = self.inputBuf.split(",")
             #print (self.name + " US says - " + self.inputBuf)
             #self.rawUSdata[len(self.rawUSdata)] = str(self.rawUSdata[self.rawUSdata[len(self.rawUSdata)]])[0:self.rawUSdata[len(self.rawUSdata)-2]]
@@ -188,7 +253,7 @@ class usDataThread (multiThreadBase):
         global USAvgDistances
         #print (self.name + " inside mAverage")
         i = 0
-        for i in range(0, 5):
+        for i in range(0, len(USAvgDistances)):
             USAvgDistances[i] += (int(self.rawUSdata[i]) - USAvgDistances[i])/n
         if self.debug:
             print (self.name + " Avg Vector - " + str(USAvgDistances))
@@ -197,28 +262,37 @@ class usDataThread (multiThreadBase):
         global USAvgDistances
         global lastCommand
         global dataReady
-
+        global obstruction
         #print (self.name + " inside US-Interrupt")
         try:
-            if lastCommand[0] == "F":
-                if (USAvgDistances[0] < 100) or (USAvgDistances[1] < 100) or (USAvgDistances[2] < 100):
+            if lastCommand[0] == "F": #or lastCommand[0] == "X":
+                if (int(USAvgDistances[0]) < 100) or (int(USAvgDistances[1]) < 70) or (int(USAvgDistances[2]) < 70):
                     print (self.name + ": FRONT TOO CLOSE. STOPPPPP!!!")
-                    dataReady = True
-                    lastCommand = "X"
+                    #dataReady = True
+                    obstruction = True
+                    print (self.name + " Avg Vector - " + str(USAvgDistances))
+                    #lastCommand = "X"
                     #print (self.name + ": Sending Command...")
                     #motorConn.write(lastCommand)
                     #time.sleep(1)
-            elif lastCommand[0] == "B":
-                if USAvgDistances[5] < 100:
+                else:
+                    obstruction = False
+            elif lastCommand[0] == "B": #or lastCommand[0] == "X":
+                if int(USAvgDistances[5]) < 50:
                     print (self.name + ": BACK TOO CLOSE. STOPPPPP!!!")
-                    dataReady = True
-                    lastCommand = "X"
+                    #dataReady = True
+                    obstruction = True
+                    print (self.name + " Avg Vector - " + str(USAvgDistances))
+                    #lastCommand = "X"
                     # print (self.name + ": Sending Command...")
                     # motorConn.write(lastCommand)
                     # time.sleep(1)
+                else :
+                    obstruction = False
+
         except Exception as e:
             self.errorCount += 1
-            print (self.name + ": ERROR in US_safety_interrupt - " + e)
+            print (self.name + ": ERROR in US_safety_interrupt - " + str(e))
 
 
 def simpTransform():
@@ -322,15 +396,15 @@ while sysRunning:
             sysRunning = False
         else:
             print ("Client says - " + dataInput)
-            if dataInput[0] == "F" or dataInput[0] == "B" or dataInput[0] == "R" or dataInput[0] == "L" or dataInput[0] == "X" :
+            if dataInput[0] == "F" or dataInput[0] == "B" or dataInput[0] == "R" or dataInput[0] == "L" or dataInput[0] == "X":
                 print ("Valid Command")
                 dataReady = True
                 lastCommand = dataInput #[1:len(dataInput)]
-                if not lastCommand[0] == "X":
+                if lastCommand[0] != "X" :
                     commandToTrans()
-                else:
-                    motorConn.write(lastCommand)
-                    dataReady = False
+                # else:
+                #     motorConn.write(lastCommand)
+                #     dataReady = False
             else:
                 dataReady = False
                 print ("Invalid Command")

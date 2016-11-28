@@ -30,7 +30,7 @@ s.listen(1)
 
 #setup serial connection to motor controller
 try:
-    motorConn = serial.Serial('/dev/ttyACM0') #check this
+    MotorConn = serial.Serial('/dev/ttyACM0') #check this
 except Exception as e:
     print ('unable to establish serial comms')
 #motorConn.baudrate = 9600

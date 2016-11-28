@@ -10,6 +10,7 @@
 
 from collections import deque
 import socket
+import RC_server
 
 def directMode():
     print "zero"
