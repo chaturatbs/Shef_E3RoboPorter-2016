@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import os
 #import MSAC
-capWebcam = cv2.VideoCapture(1)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
+capWebcam = cv2.VideoCapture(0)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
 
 if capWebcam.isOpened() == False:               # check if VideoCapture object was associated to webcam successfully
@@ -21,15 +21,16 @@ while cv2.waitKey(1) != 27 and capWebcam.isOpened():
     #img = cv2.imread(imgOriginal)
     #img = cv2.resize(img, (0, 0), fx=0.2, fy=0.2)
     gray = cv2.cvtColor(imgOriginal, cv2.COLOR_BGR2GRAY)
-
+    #blurred = cv2.blur(gray, (9,9))
     #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 200, 300, apertureSize=5)
+    edges = cv2.Canny(gray, 80, 150, apertureSize=3)
     #cv2.imshow("edges", edges)
-    lines = cv2.HoughLines(edges,1,np.pi/180,120)
+    lines = cv2.HoughLines(edges,1,np.pi/180,50)
 
     try:
-        for i in range(0, len(lines)):
+        for i in range(0, 50):
             for rho, theta in lines[i]:
+                #if theta < 5*np.pi/180
                 a = np.cos(theta)
                 b = np.sin(theta)
                 x0 = a * rho
@@ -46,11 +47,11 @@ while cv2.waitKey(1) != 27 and capWebcam.isOpened():
     except:
         print ("error")
 
-    cv2.namedWindow("imgOriginal", cv2.WINDOW_NORMAL)  # create windows, use WINDOW_AUTOSIZE for a fixed window size
+    #cv2.namedWindow("imgOriginal", cv2.WINDOW_NORMAL)  # create windows, use WINDOW_AUTOSIZE for a fixed window size
     cv2.namedWindow("edges", cv2.WINDOW_NORMAL)
     cv2.namedWindow("transformed", cv2.WINDOW_NORMAL)
 
-    cv2.imshow("imgOriginal", imgOriginal)  # show windows
+    #cv2.imshow("imgOriginal", imgOriginal)  # show windows
     cv2.imshow("edges", edges)
     cv2.imshow("transformed", gray)
 

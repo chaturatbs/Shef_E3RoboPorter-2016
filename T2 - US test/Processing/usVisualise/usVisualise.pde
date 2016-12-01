@@ -10,6 +10,7 @@ int[] sense_r = new int[2];
 int[] sense_b = new int[2];
 float sensorAngle = 0.3;
 
+float dispScale = 2;
 int[] distances = new int[6];
 int inByte = 0;
 int lf = 10;
@@ -29,8 +30,8 @@ void mAverage(int n) {
 }
 
 void setup() {
-  int size_x = 800;
-  int size_y = 800;
+  int size_x = 800;//*dispScale;
+  int size_y = 800;//*dispScale;
   size(800, 800);
   //int[] porter_ctr = new int[2]
   porter_ctr[0] = size_x/2;
@@ -55,22 +56,31 @@ void setup() {
   sense_r[1] = porter_ctr[1];
 
   printArray(Serial.list());
-  usPort = new Serial(this, Serial.list()[0], 19200);
+  try{
+    usPort = new Serial(this, Serial.list()[0], 19200);
+  } catch (IndexOutOfBoundsException e) {
+    System.err.println("IndexOutOfBoundsException: " + e.getMessage());
+  }
+    
 
   int j = 0;
 
-  while ((usPort.available() > 0) && (j < nAvg)) {
-    inBuffer = usPort.readStringUntil('\n');
-    if (inBuffer != null) {
-      inBuffer = inBuffer.trim();
-
-      String[] tokens = inBuffer.split(delims);
-      for (int i = 0; i < tokens.length; i++) { //<>//
-        distances[i] = Integer.parseInt(tokens[i]);
+  try{ //<>//
+    while ((usPort.available() > 0) && (j < nAvg)) {
+      inBuffer = usPort.readStringUntil('\n');
+      if (inBuffer != null) {
+        inBuffer = inBuffer.trim();
+  
+        String[] tokens = inBuffer.split(delims);
+        for (int i = 0; i < tokens.length; i++) { //<>//
+          distances[i] = Integer.parseInt(tokens[i]);
+        }
       }
+      mAverage(nAvg); //<>//
+      j++;
     }
-    mAverage(nAvg);
-    j++;
+  } catch (NullPointerException e){
+    System.err.println("NullPointerException: " + e.getMessage());
   }
 }
 
@@ -83,25 +93,25 @@ void draw() {
   fill(230);
   line(porter_ctr[0]-90, porter_ctr[1]+40,porter_ctr[0]+90, porter_ctr[1]+40);
   strokeWeight(1);
-
-  while (usPort.available() > 0) {
-
-    inBuffer = usPort.readStringUntil('\n');
-    if (inBuffer != null) {
-      inBuffer = inBuffer.trim();
-      //print(inBuffer);
-
-      String[] tokens = inBuffer.split(delims);
-      //print(tokens);
-      for (int i = 0; i < tokens.length; i++) { //<>//
-         distances[i] = Integer.parseInt(tokens[i]);
-         //print(distances);
-       }
-      //println(str(distances));
-      //inByte = Integer.parseInt(inBuffer.trim());
-       //print(inByte);
-    } //
+  try { //<>//
+    while (usPort.available() > 0) {
+  
+      inBuffer = usPort.readStringUntil('\n');
+      if (inBuffer != null) {
+        inBuffer = inBuffer.trim();
+        //print(inBuffer);
+  
+        String[] tokens = inBuffer.split(delims);
+        //print(tokens);
+        for (int i = 0; i < tokens.length; i++) { //<>//
+           distances[i] = Integer.parseInt(tokens[i]);
+         }
+      }
+    }
+  } catch (NullPointerException e){
+    System.err.println("NullPointerException: " + e.getMessage());
   }
+  
 
   mAverage(nAvg);
 

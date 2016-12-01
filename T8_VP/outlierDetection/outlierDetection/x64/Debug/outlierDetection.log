@@ -1,0 +1,4 @@
+﻿  main.cpp
+d:\chatu docs_main\sheffield\eee\year 4\eee471\shef_e3roboporter-2016\t8_vp\outlierdetection\outlierdetection\main.cpp(364): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+  outlierDetection.vcxproj -> D:\Chatu Docs_MAIN\Sheffield\EEE\Year 4\EEE471\Shef_E3RoboPorter-2016\T8_VP\outlierDetection\x64\Debug\outlierDetection.exe
+  outlierDetection.vcxproj -> D:\Chatu Docs_MAIN\Sheffield\EEE\Year 4\EEE471\Shef_E3RoboPorter-2016\T8_VP\outlierDetection\x64\Debug\outlierDetection.pdb (Partial PDB)

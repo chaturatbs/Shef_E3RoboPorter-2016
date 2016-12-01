@@ -171,12 +171,12 @@ class motorDataThread(multiThreadBase):
                     #self.torqueStop(speedVector, 0.3)
                     speedVector = [0, 0]
                     self.send_serial_data(speedVector)
-            elif lastOP == "x":
-                #self.torqueStop(speedVector, 0.3)
-                speedVector = [0, 0]
+            # elif lastOP == "x":
+            #     #self.torqueStop(speedVector, 0.3)d
+            #     speedVector = [0, 0]
                 self.send_serial_data(speedVector)
-            elif not threadSync:
-                pass
+            # elif not threadSync:
+            #     pass
                 #print ("\t" + self.name + " Threads not Synchronising... not safe to move! :( ")
                 #speedVector = [0, 0]
                 #self.send_serial_data(speedVector)
