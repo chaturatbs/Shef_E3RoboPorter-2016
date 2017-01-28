@@ -210,6 +210,16 @@ class autoPilotThread(MultiThreadBase):
         self.dY = 0
         self.autoSpeed = 20
 
+        self.distQuantise = 30
+
+        self.recPenalty = 0.2
+        self.momentumBonus = 0.5
+        self.alpha = 1
+        self.beta = 10
+
+        # tempX = 0
+        # tempY = 0
+
     def run(self):
         global threadLock
         global dataReady
@@ -350,6 +360,7 @@ class autoPilotThread(MultiThreadBase):
 
                 #speechQueue.put("Successfully arrived at the target")
 
+
 ##there needs a function that changes the porterLocationGlobal based on orientation and wheel rotation
 
     def pulsesToDistance(self, lPulses, rPulses):
@@ -369,6 +380,72 @@ class autoPilotThread(MultiThreadBase):
         #r is the distance traveled along the hyp
         porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - porterOrientation)
         porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - porterOrientation)
+
+    ###TO BE IMPLEMENTED
+    ##AutoPilot motion to be quantised to distQuantise
+
+    def checkquad(self):
+        distScore = []  # relative to the current orientation f,b,l,r
+        envScore = []
+        distScore = self.checkdist(distScore)
+        envScore = self.envCheck()
+        return self.calcHeuristic(distScore, envScore)
+
+    def checkdist(self, distScore):
+
+        directions = [porterOrientation, 180 - porterOrientation,
+                      90 - porterOrientation, 90 + porterOrientation]
+
+        for direction in directions:
+            tempXpos = porterLocation_Global[0] + self.distQuantise * numpy.cos(90 - direction)
+            tempYpos = porterLocation_Global[1] + self.distQuantise * numpy.sin(90 - direction)
+
+            tempDX = targetLocation[0] - tempXpos
+            tempDY = targetLocation[1] - tempYpos
+
+            tempDist = numpy.sqrt(numpy.square(tempDX) + numpy.square(tempDY))
+            distScore.append(tempDist)
+
+        print("dist score is " + str(distScore))
+        print("min dist score is " + str(min(distScore)) + " and its at " +
+              str(distScore.index(min(distScore))))
+
+        return distScore.index(min(distScore))
+
+    def envCheck(self):
+        #self.envScore = []
+
+        envScore = [min(USAvgDistances[:2]),USAvgDistances[3],USAvgDistances[4],USAvgDistances[5]]
+        #map this non-linearly
+
+        print("environment score is " + str(envScore))
+        print("max env score is " + str(max(envScore)) + " and its at " +
+              str(envScore.index(max(envScore))))
+
+        return envScore
+
+    def calcHeuristic(self,distScore, envScore):
+
+        score = []
+
+        for i in range(0, 4):
+            if distScore[i] != 0:
+                score.append(self.alpha * envScore[i] + self.beta / distScore[i])
+            else:
+                score.append(self.alpha * envScore[i] + 1)
+
+        #NO MOMENTUM BONUS FOR NOW
+        # if len(self.pathmemory) != 0:
+        #     print("momentum bonus in the ", self.pathmemory[len(self.pathmemory) - 1], "direction")
+        #     score[self.pathmemory[len(self.pathmemory) - 1]] = score[self.pathmemory[
+        #         len(self.pathmemory) - 1]] + self.momentumBonus
+        # else:
+        #     print('start of run, no momentum bonus')
+
+        print("heuristic score is " + str(score))
+        print("max heuristic score is " + str(max(score)) + " and its at " +
+              str(score.index(max(score))))
+        return score
 
 
 class debugThread(MultiThreadBase):
