@@ -179,7 +179,7 @@ class IMUDataThread(multiThreadBase):
         else:
             logging.info("IMU init failed :/")
 
-        while True:
+        while not exitFlag:
             if imu.IMURead():
                 #logging.info("Read IMU")
                 globalIMUData = imu.getIMUData()
@@ -212,19 +212,21 @@ class autoPilotThread(multiThreadBase):
         global porterLocation_Global
         global porterLocation_Local
         global lastCommand
+        global targetLocation
         #global globalIMUFusion
 
         while not exitFlag:
             if not autoPilot:
                 if imuEnable:
-                    print("r: %f p: %f y: %f" % (numpy.rad2deg(globalIMUFusion[0]),numpy.rad2deg(globalIMUFusion[1]), numpy.rad2deg(globalIMUFusion[2])))
+                    pass
+                    #logging.debug("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),(numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
                 time.sleep(1)
             else:
                 #for now assume local position is the same as global
                 porterLocation_Global = porterLocation_Local
                     #if not the same put robot into exploration more till it finds a QR code, then position.
                 #go to global XY
-                targetLocation = [100,100]
+                targetLocation = [100,0]
                 #find the required angle change to align to global grid
                 speechQueue.put("Looking for north")
                 porterOrientation = numpy.rad2deg(globalIMUFusion[2]) #Yaw Data
@@ -235,16 +237,17 @@ class autoPilotThread(multiThreadBase):
                     self.angleChange = self.angleChange - 360 #if >180 turn left instead of right
 
                 with threadLock:
-                    if self.angleChange > 0:
+                    if self.angleChange > 3:
                         lastCommand = "r"
                         speedVector = [-self.autoSpeed, self.autoSpeed]
-                    elif self.angleChange < 0:
+                        dataReady = True
+                    elif self.angleChange < 3:
                         lastCommand = "l"
                         speedVector = [self.autoSpeed, -self.autoSpeed]
-                    dataReady = True
+                        dataReady = True
 
                 #wait till its aligned
-                while (abs(self.angleChange) > 5) and autoPilot: #Add boundaries
+                while (abs(self.angleChange) > 3) and autoPilot: #Add boundaries
                     #keep checking the angle
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2]) #Yaw Data
                     self.angleChange = 90 - porterOrientation  # right if +ve left if -ve
@@ -296,13 +299,14 @@ class autoPilotThread(multiThreadBase):
                     if self.angleChange > 0:
                         lastCommand = "r"
                         speedVector = [-self.autoSpeed, self.autoSpeed]
+                        dataReady = True
                     elif self.angleChange < 0:
                         lastCommand = "l"
                         speedVector = [self.autoSpeed, -self.autoSpeed]
-                    dataReady = True
+                        dataReady = True
 
                 #wait till its aligned
-                while (abs(self.angleChange) > 5) and autoPilot: #Add boundaries
+                while (abs(self.angleChange) > 3) and autoPilot: #Add boundaries
                     #keep checking the angle
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2]) #Yaw Data
 
@@ -789,6 +793,8 @@ class ttsThread(multiThreadBase):
                 engine.say(speechQueue.get())
                 engine.runAndWait()
                 speechQueue.task_done()
+            else:
+                time.sleep(0.5)
 
 class cameraThread(multiThreadBase): #QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
@@ -907,6 +913,7 @@ def get_ip_address(ifname):
 
 logging.info("Starting system...")
 sysRunning = True
+logging.info("checking if this works")
 
 #speech ="Starting up"
 
@@ -917,10 +924,10 @@ imuThread = IMUDataThread(1,"IMU Thread")
 imuThread.start()
 threads.append(imuThread)
 
-logging.info("Starting speech Thread...")
-speechThread = ttsThread(2, "Speech Thread")
-speechThread.start()
-threads.append(speechThread)
+# logging.info("Starting speech Thread...")
+# speechThread = ttsThread(2, "Speech Thread")
+# speechThread.start()
+# threads.append(speechThread)
 
 logging.info("Starting Autopilot Thread")
 #speechQueue.put("Turning On Autopilot")
@@ -1085,7 +1092,7 @@ while sysRunning:
                     if autoPilot:
                         logging.info("Turning OFF Autopilot")
                         speechQueue.put("Turning Off Autopilot. Bye Bye")
-                        a = False
+                        autoPilot = False
                         with threadLock:
                             lastCommand = "x"
                             # commandToTrans()

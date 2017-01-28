@@ -14,7 +14,7 @@
   </component>
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/R2$R2_logger.coverage" NAME="R2_logger Coverage Results" MODIFIED="1485550442014" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/R2$R2_server.coverage" NAME="R2_server Coverage Results" MODIFIED="1485470324834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/R2$R2_server.coverage" NAME="R2_server Coverage Results" MODIFIED="1485623210550" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
@@ -28,24 +28,22 @@
       <file leaf-file-name="R2_server.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/R2_server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="287">
-              <caret line="946" column="54" selection-start-line="946" selection-start-column="54" selection-end-line="946" selection-end-column="54" />
+            <state relative-caret-position="92">
+              <caret line="222" column="29" selection-start-line="222" selection-start-column="29" selection-end-line="222" selection-end-column="29" />
               <folding>
                 <element signature="e#170#183#0" expanded="true" />
                 <element signature="e#2453#3302#0" expanded="false" />
                 <element signature="e#2939#3302#0" expanded="false" />
-                <element signature="e#3346#4220#0" expanded="false" />
-                <element signature="e#4266#10869#0" expanded="false" />
-                <element signature="e#10912#16985#0" expanded="false" />
-                <element signature="e#17031#23506#0" expanded="false" />
-                <element signature="e#23549#28478#0" expanded="false" />
-                <element signature="e#28518#28777#0" expanded="false" />
-                <element signature="e#28962#29578#0" expanded="false" />
-                <element signature="e#29605#29786#0" expanded="false" />
-                <element signature="e#29814#30163#0" expanded="false" />
-                <element signature="e#30288#31545#0" expanded="false" />
-                <element signature="e#31579#31975#0" expanded="false" />
-                <element signature="e#34893#35746#0" expanded="false" />
+                <element signature="e#3346#4228#0" expanded="false" />
+                <element signature="e#11075#17148#0" expanded="false" />
+                <element signature="e#17194#23669#0" expanded="false" />
+                <element signature="e#23712#28641#0" expanded="false" />
+                <element signature="e#29175#29791#0" expanded="false" />
+                <element signature="e#29818#29999#0" expanded="false" />
+                <element signature="e#30027#30376#0" expanded="false" />
+                <element signature="e#30501#31758#0" expanded="false" />
+                <element signature="e#31792#32188#0" expanded="false" />
+                <element signature="e#35153#36006#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -54,8 +52,8 @@
       <file leaf-file-name="R2_logger.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/R2_logger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="93" column="0" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
+            <state relative-caret-position="306">
+              <caret line="106" column="0" selection-start-line="106" selection-start-column="0" selection-end-line="106" selection-end-column="0" />
               <folding>
                 <element signature="e#59#72#0" expanded="true" />
                 <element signature="e#148#214#0" expanded="false" />
@@ -120,12 +118,12 @@
     <panes />
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="web.server" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="js-jscs-nodeInterpreter" value="C:\Program Files\nodejs\node.exe" />
   </component>
-  <component name="RunManager" selected="Python.R2_logger">
+  <component name="RunManager" selected="Python.R2_server">
     <configuration default="false" name="R2_server" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -376,8 +374,8 @@
     </list>
     <recent_temporary>
       <list size="2">
-        <item index="0" class="java.lang.String" itemvalue="Python.R2_logger" />
-        <item index="1" class="java.lang.String" itemvalue="Python.R2_server" />
+        <item index="0" class="java.lang.String" itemvalue="Python.R2_server" />
+        <item index="1" class="java.lang.String" itemvalue="Python.R2_logger" />
       </list>
     </recent_temporary>
   </component>
@@ -395,27 +393,28 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1382" height="754" extended-state="7" />
-    <editor active="true" />
+    <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
+    <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.42857143" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="File Transfer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.23188406" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28663447" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.42673108" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3993559" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -431,9 +430,25 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="26" />
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/R2_server.py</url>
+          <line>1091</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/R2_server.py</url>
+          <line>339</line>
+          <option name="timeStamp" value="30" />
+        </line-breakpoint>
+      </breakpoints>
+      <option name="time" value="31" />
     </breakpoint-manager>
-    <watches-manager />
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="self.angleChange" language="Python" />
+      </configuration>
+    </watches-manager>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/R2_server.py">
@@ -444,18 +459,16 @@
             <element signature="e#170#183#0" expanded="true" />
             <element signature="e#2453#3302#0" expanded="false" />
             <element signature="e#2939#3302#0" expanded="false" />
-            <element signature="e#3346#4220#0" expanded="false" />
-            <element signature="e#4266#10869#0" expanded="false" />
-            <element signature="e#10912#16985#0" expanded="false" />
-            <element signature="e#17031#23506#0" expanded="false" />
-            <element signature="e#23549#28478#0" expanded="false" />
-            <element signature="e#28518#28777#0" expanded="false" />
-            <element signature="e#28962#29578#0" expanded="false" />
-            <element signature="e#29605#29786#0" expanded="false" />
-            <element signature="e#29814#30163#0" expanded="false" />
-            <element signature="e#30288#31545#0" expanded="false" />
-            <element signature="e#31579#31975#0" expanded="false" />
-            <element signature="e#34893#35746#0" expanded="false" />
+            <element signature="e#3346#4228#0" expanded="false" />
+            <element signature="e#11075#17148#0" expanded="false" />
+            <element signature="e#17194#23669#0" expanded="false" />
+            <element signature="e#23712#28641#0" expanded="false" />
+            <element signature="e#29175#29791#0" expanded="false" />
+            <element signature="e#29818#29999#0" expanded="false" />
+            <element signature="e#30027#30376#0" expanded="false" />
+            <element signature="e#30501#31758#0" expanded="false" />
+            <element signature="e#31792#32188#0" expanded="false" />
+            <element signature="e#35153#36006#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -479,18 +492,49 @@
             <element signature="e#170#183#0" expanded="true" />
             <element signature="e#2453#3302#0" expanded="false" />
             <element signature="e#2939#3302#0" expanded="false" />
-            <element signature="e#3346#4220#0" expanded="false" />
-            <element signature="e#4266#10869#0" expanded="false" />
-            <element signature="e#10912#16985#0" expanded="false" />
-            <element signature="e#17031#23506#0" expanded="false" />
-            <element signature="e#23549#28478#0" expanded="false" />
-            <element signature="e#28518#28777#0" expanded="false" />
-            <element signature="e#28962#29578#0" expanded="false" />
-            <element signature="e#29605#29786#0" expanded="false" />
-            <element signature="e#29814#30163#0" expanded="false" />
-            <element signature="e#30288#31545#0" expanded="false" />
-            <element signature="e#31579#31975#0" expanded="false" />
-            <element signature="e#34893#35746#0" expanded="false" />
+            <element signature="e#3346#4228#0" expanded="false" />
+            <element signature="e#11075#17148#0" expanded="false" />
+            <element signature="e#17194#23669#0" expanded="false" />
+            <element signature="e#23712#28641#0" expanded="false" />
+            <element signature="e#29175#29791#0" expanded="false" />
+            <element signature="e#29818#29999#0" expanded="false" />
+            <element signature="e#30027#30376#0" expanded="false" />
+            <element signature="e#30501#31758#0" expanded="false" />
+            <element signature="e#31792#32188#0" expanded="false" />
+            <element signature="e#35153#36006#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R2_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="93" column="0" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
+          <folding>
+            <element signature="e#59#72#0" expanded="true" />
+            <element signature="e#148#214#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R2_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#170#183#0" expanded="true" />
+            <element signature="e#2453#3302#0" expanded="false" />
+            <element signature="e#2939#3302#0" expanded="false" />
+            <element signature="e#3346#4228#0" expanded="false" />
+            <element signature="e#11075#17148#0" expanded="false" />
+            <element signature="e#17194#23669#0" expanded="false" />
+            <element signature="e#23712#28641#0" expanded="false" />
+            <element signature="e#29175#29791#0" expanded="false" />
+            <element signature="e#29818#29999#0" expanded="false" />
+            <element signature="e#30027#30376#0" expanded="false" />
+            <element signature="e#30501#31758#0" expanded="false" />
+            <element signature="e#31792#32188#0" expanded="false" />
+            <element signature="e#35153#36006#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -514,18 +558,16 @@
             <element signature="e#170#183#0" expanded="true" />
             <element signature="e#2453#3302#0" expanded="false" />
             <element signature="e#2939#3302#0" expanded="false" />
-            <element signature="e#3346#4220#0" expanded="false" />
-            <element signature="e#4266#10869#0" expanded="false" />
-            <element signature="e#10912#16985#0" expanded="false" />
-            <element signature="e#17031#23506#0" expanded="false" />
-            <element signature="e#23549#28478#0" expanded="false" />
-            <element signature="e#28518#28777#0" expanded="false" />
-            <element signature="e#28962#29578#0" expanded="false" />
-            <element signature="e#29605#29786#0" expanded="false" />
-            <element signature="e#29814#30163#0" expanded="false" />
-            <element signature="e#30288#31545#0" expanded="false" />
-            <element signature="e#31579#31975#0" expanded="false" />
-            <element signature="e#34893#35746#0" expanded="false" />
+            <element signature="e#3346#4228#0" expanded="false" />
+            <element signature="e#11075#17148#0" expanded="false" />
+            <element signature="e#17194#23669#0" expanded="false" />
+            <element signature="e#23712#28641#0" expanded="false" />
+            <element signature="e#29175#29791#0" expanded="false" />
+            <element signature="e#29818#29999#0" expanded="false" />
+            <element signature="e#30027#30376#0" expanded="false" />
+            <element signature="e#30501#31758#0" expanded="false" />
+            <element signature="e#31792#32188#0" expanded="false" />
+            <element signature="e#35153#36006#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -543,8 +585,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/R2_logger.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="93" column="0" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
+        <state relative-caret-position="306">
+          <caret line="106" column="0" selection-start-line="106" selection-start-column="0" selection-end-line="106" selection-end-column="0" />
           <folding>
             <element signature="e#59#72#0" expanded="true" />
             <element signature="e#148#214#0" expanded="false" />
@@ -554,24 +596,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/R2_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="287">
-          <caret line="946" column="54" selection-start-line="946" selection-start-column="54" selection-end-line="946" selection-end-column="54" />
+        <state relative-caret-position="92">
+          <caret line="222" column="29" selection-start-line="222" selection-start-column="29" selection-end-line="222" selection-end-column="29" />
           <folding>
             <element signature="e#170#183#0" expanded="true" />
             <element signature="e#2453#3302#0" expanded="false" />
             <element signature="e#2939#3302#0" expanded="false" />
-            <element signature="e#3346#4220#0" expanded="false" />
-            <element signature="e#4266#10869#0" expanded="false" />
-            <element signature="e#10912#16985#0" expanded="false" />
-            <element signature="e#17031#23506#0" expanded="false" />
-            <element signature="e#23549#28478#0" expanded="false" />
-            <element signature="e#28518#28777#0" expanded="false" />
-            <element signature="e#28962#29578#0" expanded="false" />
-            <element signature="e#29605#29786#0" expanded="false" />
-            <element signature="e#29814#30163#0" expanded="false" />
-            <element signature="e#30288#31545#0" expanded="false" />
-            <element signature="e#31579#31975#0" expanded="false" />
-            <element signature="e#34893#35746#0" expanded="false" />
+            <element signature="e#3346#4228#0" expanded="false" />
+            <element signature="e#11075#17148#0" expanded="false" />
+            <element signature="e#17194#23669#0" expanded="false" />
+            <element signature="e#23712#28641#0" expanded="false" />
+            <element signature="e#29175#29791#0" expanded="false" />
+            <element signature="e#29818#29999#0" expanded="false" />
+            <element signature="e#30027#30376#0" expanded="false" />
+            <element signature="e#30501#31758#0" expanded="false" />
+            <element signature="e#31792#32188#0" expanded="false" />
+            <element signature="e#35153#36006#0" expanded="false" />
           </folding>
         </state>
       </provider>
