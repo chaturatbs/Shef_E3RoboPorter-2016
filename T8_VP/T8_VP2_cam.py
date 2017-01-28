@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import os
 #import MSAC
-capWebcam = cv2.VideoCapture(0)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
+capWebcam = cv2.VideoCapture(1)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
 
 if capWebcam.isOpened() == False:               # check if VideoCapture object was associated to webcam successfully

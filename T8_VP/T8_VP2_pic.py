@@ -38,4 +38,5 @@ nInliers = np.zeros(1)
 #print vpOutput
 
 cv2.waitKey(0) != 27
-cv2. destroyallwndows
+cv2.destroyAllWindows()
+

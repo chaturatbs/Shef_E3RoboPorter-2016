@@ -65,8 +65,8 @@ int usMeasure (int trigPin, int echoPin) {
   //measure pulse
   duration = pulseIn(echoPin, HIGH, 50000);
   distance = duration/58; 
-  if (distance > 300) {
-    distance = 300;
+  if (distance > 200) {
+    distance = 200;
     //Serial.println(0);
   } else {
     //Serial.println(distance);
@@ -98,12 +98,12 @@ void loop() {
   int i = 0;
   
   usArray[0] = usMeasure(c_trig, c_echo);
-  //Serial.println(usArray[0]);
-  usArray[1] = usMeasure(fl_trig, fl_echo);
-  usArray[2] = usMeasure(fr_trig, fr_echo);
   usArray[3] = usMeasure(l_trig, l_echo);
   usArray[4] = usMeasure(r_trig, r_echo);
+  usArray[1] = usMeasure(fl_trig, fl_echo);
   usArray[5] = usMeasure(b_trig, b_echo);
+  usArray[2] = usMeasure(fr_trig, fr_echo);
+
    //Serial.print(usArray[0]);
    //Serial.print(usArray[1]);
    //Serial.println("end");
