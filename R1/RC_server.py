@@ -19,6 +19,8 @@ import time
 import numpy
 
 global lastCommand
+debug = True
+
 lastCommand = ""
 global lastOP
 lastOP = ""
@@ -37,11 +39,11 @@ global dataReady
 dataReady = False
 global USAvgDistances
 USAvgDistances = [0., 0., 0., 0., 0., 0.]
-USThresholds = [100,70,50]
+USThresholds = [100,30,30]
 global obstruction
 obstruction = False
-global threadSync
-threadSync = True
+global threadLock
+threadLock = True
 global safetyOn
 safetyOn = True
 
@@ -79,15 +81,17 @@ def cmdToSpeeds(inputCommand):
         finally:
             mSpeed = 0
     else:
-        mSpeed = 20
+        mSpeed = 30
 
     if inputCommand[0] == "f":
         return mSpeed, mSpeed #Left, Right
     elif inputCommand[0] == "b":
         return -mSpeed, -mSpeed
     elif inputCommand[0] == "r":
+        mSpeed -= 10
         return mSpeed, -mSpeed
     elif inputCommand[0] == "l":
+        mSpeed -= 10
         return -mSpeed, mSpeed
 
 #Fil in a function based on the dynamics of the robo
@@ -139,7 +143,7 @@ class motorDataThread(multiThreadBase):
         self.threadID = threadID
         self.name = name
         self.actionState = 0
-        self.debug = False
+        self.debug = True
         self.oldVector = [0, 0]
         # self.dataReady = 0
         # self.startTime = 0.
@@ -151,54 +155,70 @@ class motorDataThread(multiThreadBase):
     def run(self):
         global speedVector
         global safetyOn
+        global threadLock
+        global dataReady
 
         print "Starting " + self.name
         while not exitFlag:
             self.loopStartFlag()
-
-            if obstruction and speedVector != [0,0]:
-                print ("\t" + self.name + " OBSTRUCTION! :( ")
+            if obstruction:
+                #if speedVector != [0,0]:
                 if safetyOn:
-                    #self.torqueStop(speedVector, 0.3)
+                    # print ("\t" + self.name + " OBSTRUCTION! :( ... but Safety is ON :)")
+                    # while not threadSync:
+                    #     pass
+                    # threadSync = False
                     speedVector = [0,0]
                     self.send_serial_data(speedVector)
+                    # threadSync = True
                 else:
-                    print ("\t \t" + self.name
-                           + " OH MY GOD IM GOING TO HIT SOMETHING! >.< (I hope its a person...mmmm)")
-            elif not USConnected and safetyOn:
-                print ("\t" + self.name + " No ultrasonic Comms... Halting")
+                    print ("\t \t" + self.name + " OH MY GOD IM GOING TO HIT SOMETHING! >.<")
+            elif not USConnected:
                 if safetyOn:
-                    #self.torqueStop(speedVector, 0.3)
+                    print ("\t" + self.name + " No ultrasonic Comms... Halting")
+                    # while not threadSync:
+                    #     if self.debug:
+                    #         print ("\t" + self.name + " waiting for Thread Sync in USConnected")
+                    #     pass
+                    # if debug:
+                    #     print ("\t" + self.name + " ThreadSync = False")
+                    # threadSync = False
+                    if debug:
+                        print ("\t" + self.name + " Setting Speed Vector")
                     speedVector = [0, 0]
-                    self.send_serial_data(speedVector)
-            # elif lastOP == "x":
-            #     #self.torqueStop(speedVector, 0.3)d
-            #     speedVector = [0, 0]
+                    # if debug:
+                    #     print ("\t" + self.name + " ThreadSync = True")
+                    # threadSync = True
+                else:
+                    print ("\t" + self.name + " Unsafe to move... No ultrasonic Comms...")
                 self.send_serial_data(speedVector)
-            # elif not threadSync:
-            #     pass
-                #print ("\t" + self.name + " Threads not Synchronising... not safe to move! :( ")
-                #speedVector = [0, 0]
-                #self.send_serial_data(speedVector)
+
             elif dataReady:
                 print ("\t" + self.name + " Data Ready")
                 try:
                     print ("\t" + self.name + " Trying to send data")
                     self.send_serial_data(speedVector)
+
+                    # while not threadSync:
+                    #     if self.debug:
+                    #         print ("\t" + self.name + " waiting for Thread Sync in DataReady")
+                    #     pass
+                    # threadSync = False
+                    dataReady = False
+                    # threadSync = True
+
                 except Exception as e:
                     print ("\t" + self.name + ": ERROR - " + str(e))
                     try:
                         print ("\t" + self.name + ": Trying to open serial port")
                         MotorConn.open()
-                        # serialConnected = True
                     except Exception as e:
                         print("\t" + self.name + ": ERROR trying to open motor port :( : " + str(e))
                     finally:
                         print ("\t" + self.name + ": No Motor Comms... Looping back to listening mode")
-
             if self.debug:
                 time.sleep(0.1)
-                self.read_serial_data()
+                #self.read_serial_data()
             else:
                 time.sleep(0.001)
                 # self.loopEndFlag()
@@ -206,23 +226,18 @@ class motorDataThread(multiThreadBase):
         print "Exiting " + self.name
 
     def send_serial_data(self, sendCommand):
-        global dataReady
 
-        #if sendCommand != self.oldVector:
         print("\t" + self.name + ": Sending Speed Vector - " + str(sendCommand))
-        #MotorConn.write(int(255))
-        MotorConn.write(str(sendCommand[0]))
-        MotorConn.write(",")
-        MotorConn.write(str(sendCommand[1]))
-        MotorConn.write("\n")
-        #MotorConn.write()
-        dataReady = False
+        sendData = str(sendCommand[0]) + "," + str(sendCommand[1]) + "\n"
+        # MotorConn.write(str(sendCommand[0]))
+        # MotorConn.write(",")
+        # MotorConn.write(str(sendCommand[1]))
+        # MotorConn.write("\n")
+        MotorConn.write(sendData)
+
         if self.debug:
             print("\t" + self.name + ": Successfully sent...")
-        self.actionState = 4
-        #self.oldVector = sendCommand
-        #else:
-        #    pass
+        #self.actionState = 4
 
     def read_serial_data(self):
         motorInput = MotorConn.readline()
@@ -260,15 +275,6 @@ class motorDataThread(multiThreadBase):
             #         print (self.name + " Avg loop Runtime - " + str(self.avgRuntime))
             #         self.avgCounter = 0
 
-    def torqueStop(self, speedVector, sleepTime):
-        speedNeutral = [0,0]
-        speedNeutral[0] = (-1)*speedVector[0]
-        speedNeutral[1] = (-1) * speedVector[1]
-        print ("tstop - " + str(speedNeutral))
-        self.send_serial_data(speedNeutral)
-        print ("\t" + self.name + "Torque Stop!")
-        time.sleep(sleepTime)
-
 
 class usDataThread(multiThreadBase):
     def __init__(self, threadID, name):
@@ -283,12 +289,13 @@ class usDataThread(multiThreadBase):
 
     def run(self):
         global speedVector
-        global threadSync
+        global threadLock
+        global USConnected
 
         print "Starting " + self.name
         while not exitFlag:
-            if self.debug:
-                self.loopStartFlag()
+            #if self.debug:
+                #self.loopStartFlag()
 
             try:
                 self.getUSvector()
@@ -301,7 +308,7 @@ class usDataThread(multiThreadBase):
                         print ("\t" + self.name + ":Trying to open serial port")
                     USConn.open()
                     #serialConnected = True
-                    threadSync = True
+                    #threadSync = True
                 except Exception as e:
                     self.errorCount += 1
                     print("\t" + self.name + ": ERROR trying to open Ultrasonic port :( : " + str(e))
@@ -312,16 +319,17 @@ class usDataThread(multiThreadBase):
             if self.errorCount > 3:
                 print ("Consecutive Exceptions... pausing execution...")
                 self.errorCount = 0
-                threadSync = False
+
+                #threadSync = False
                 time.sleep(3)
                 print ("US resuming")
-                threadSync = True
+                #threadSync = True
 
             self.US_safety_interrupt()
             if self.debug:
                 time.sleep(0.1)
-                self.loopEndFlag()
-                self.loopRunTime()
+                #self.loopEndFlag()
+                #self.loopRunTime()
             else:
                 time.sleep(0.01)
 
@@ -344,10 +352,17 @@ class usDataThread(multiThreadBase):
 
     def mAverage(self, n):
         global USAvgDistances
+        global threadLock
         i = 0
         if len(self.rawUSdata) == 6:
+            # while not threadSync:
+            #     if self.debug:
+            #         print ("\t" + self.name + " waiting for Thread Sync")
+            #     pass
+            # threadSync = False
             for i in range(0, len(USAvgDistances)):
                 USAvgDistances[i] += (int(self.rawUSdata[i]) - USAvgDistances[i]) / n
+            #threadSync = True
             if self.debug:
                 print ("\t" + self.name + " Avg Vector - " + str(USAvgDistances))
 
@@ -356,46 +371,64 @@ class usDataThread(multiThreadBase):
         global lastOP
         global dataReady
         global obstruction
-        global threadSync
+        global threadLock
 
-        threadSync = False
-        try:
-            if lastOP == "F":  # or lastCommand[0] == "X":
-                if (int(USAvgDistances[0]) < USThresholds[0]) or \
-                        (int(USAvgDistances[1]) < USThresholds[1] ) or \
-                        (int(USAvgDistances[2]) < USThresholds[1]):
-                    print ("\t" + self.name + ": FRONT TOO CLOSE. STOPPPPP!!!")
-                    obstruction = True
-                    print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[0]))
-                           + ", " + str(int(USAvgDistances[1])) + ", " + str(int(USAvgDistances[0])))
-                else:
-                    obstruction = False
-            elif lastOP == "B":  # or lastCommand[0] == "X":
-                if int(USAvgDistances[5]) < USThresholds[2] :
-                    print ("\t" + self.name + ": BACK TOO CLOSE. STOPPPPP!!!")
-                    obstruction = True
-                    print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[5])))
-                else:
-                    obstruction = False
-            elif lastOP == "L":
-                if int(USAvgDistances[3]) < USThresholds[2]:
-                    print ("\t" + self.name + ": LEFT SIDE TOO CLOSE. STOPPPPP!!!")
-                    obstruction = True
-                    print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[3])))
-                else:
-                    obstruction = False
-            elif lastOP == "R":
-                if int(USAvgDistances[4]) < USThresholds[2]:
-                    print ("\t" + self.name + ": RIGHT SIDE TOO CLOSE. STOPPPPP!!!")
-                    obstruction = True
-                    print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[4])))
-                else:
-                    obstruction = False
+        if safetyOn:
+            try:
+                if lastOP == "f":  # or lastCommand[0] == "X":
+                    # while not threadSync:
+                    #     pass
+                    # threadSync = False
 
-            threadSync = True
-        except Exception as e:
-            self.errorCount += 1
-            print ("\t" + self.name + ": ERROR in US_safety_interrupt - " + str(e))
+                    if (int(USAvgDistances[0]) < USThresholds[0]): #or (int(USAvgDistances[1]) < USThresholds[1]) or (int(USAvgDistances[2]) < USThresholds[1]):
+                        print ("\t" + self.name + ": FRONT TOO CLOSE. STOPPPPP!!!")
+                        obstruction = True
+                        print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[0]))
+                               + ", " + str(int(USAvgDistances[1])) + ", " + str(int(USAvgDistances[0])))
+                    else:
+                        obstruction = False
+                    # threadSync = True
+
+                elif lastOP == "b":  # or lastCommand[0] == "X":
+                    # while not threadSync:
+                    #     pass
+                    # threadSync = False
+                    if int(USAvgDistances[5]) < USThresholds[2] :
+                        print ("\t" + self.name + ": BACK TOO CLOSE. STOPPPPP!!!")
+                        obstruction = True
+                        print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[5])))
+                    else:
+                        obstruction = False
+                    threadSync = True
+
+                elif lastOP == "l":
+                    # while not threadSync:
+                    #     pass
+                    # threadSync = False
+                    if int(USAvgDistances[3]) < USThresholds[2]:
+                        print ("\t" + self.name + ": LEFT SIDE TOO CLOSE. STOPPPPP!!!")
+                        obstruction = True
+                        print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[3])))
+                    else:
+                        obstruction = False
+                    # threadSync = True
+
+                elif lastOP == "r":
+                    # while not threadSync:
+                    #     pass
+                    # threadSync = False
+                    if int(USAvgDistances[4]) < USThresholds[2]:
+                        print ("\t" + self.name + ": RIGHT SIDE TOO CLOSE. STOPPPPP!!!")
+                        obstruction = True
+                        print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[4])))
+                    else:
+                        obstruction = False
+                    # threadSync = True
+
+                #threadSync = True
+            except Exception as e:
+                self.errorCount += 1
+                print ("\t" + self.name + ": ERROR in US_safety_interrupt - " + str(e))
 
 
 def simpTransform():
@@ -493,7 +526,7 @@ while sysRunning:
         if not localCtrl:
             dataInput = clientConnection.recv(1024)
         else:
-            dataInput = raw_input("Please Enter Commands on local terminal...")
+            dataInput = raw_input("Please Enter Commands on local terminal...\n")
 
         if dataInput == "e":
             cmdExpecting = False
@@ -506,32 +539,52 @@ while sysRunning:
             if len(dataInput) > 0:
                 if dataInput[0] == "f" or dataInput[0] == "b" or dataInput[0] == "r" \
                         or dataInput[0] == "l" or dataInput[0] == "x" or dataInput[0] == "m":
-                    print ("Valid Command")
-                    dataReady = True
+                    print ("Valid Command\n")
+                    # while not threadSync:
+                    #     if debug:
+                    #         print ("\twaiting for Thread Sync in main thread\n")
+                    #     pass
+                    # threadSync = False
                     lastOP = dataInput[0]  # [1:len(dataInput)]
                     #commandToTrans()
-                    threadSync = False
                     speedVector = cmdToSpeeds(dataInput)
-                    threadSync = True
-
                     if lastOP == "M":
                         print ("MANUAL OVERRIDE!\n")
+                    if debug:
+                        print ("\tSetting Data Ready\n")
+
+                    dataReady = True
+                    # threadSync = True
+                    if debug:
+                        print ("\tThreads in Sync\n")
 
                 elif dataInput[0] == "s" :
-                    if not safetyOn:
+                    if safetyOn:
                         dataInput = raw_input("Do you solemnly swear you're up to no good!?..")
                         if dataInput[0] == "Y":
                             print ("May the force be with you... you are going to need it...")
                             print ("(just don't tell Ms Webster about it... >,< )")
+                            # while not threadSync:
+                            #     pass
+                            # threadSync = False
                             safetyOn = False
                     else:
+                        # while not threadSync:
+                        #     pass
+                        # threadSync = False
                         safetyOn = True
                         print ("Mischief managed ;)")
+
                     dataInput = ""
                     dataReady = False
-            else:
-                dataReady = False
-                print ("Invalid Command")
+                    # threadSync = True
+                else:
+                    # while not threadSync:
+                    #     pass
+                    # threadSync = False
+                    dataReady = False
+                    print ("Invalid Command")
+                    # threadSync = True
         dataInput = ""
         print ("")
 

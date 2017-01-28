@@ -13,8 +13,11 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/R1$R1_server.coverage" NAME="R1_server Coverage Results" MODIFIED="1485359008713" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/R1$R1_logger.coverage" NAME="R1_logger Coverage Results" MODIFIED="1485354881963" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/R1$graphOnClick.coverage" NAME="graphOnClick Coverage Results" MODIFIED="1478378590890" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/R1$pathCalc_porter.coverage" NAME="pathCalc_porter Coverage Results" MODIFIED="1480031827082" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/R1$backendv2.coverage" NAME="backendv2 Coverage Results" MODIFIED="1480797188974" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../../../../../Shell Eco Marathon" />
+    <SUITE FILE_PATH="coverage/R1$pathCalc_porter.coverage" NAME="pathCalc_porter Coverage Results" MODIFIED="1485352680109" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/R1$usPlot.coverage" NAME="usPlot Coverage Results" MODIFIED="1478044469678" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
@@ -26,13 +29,26 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="navigator.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="navigator.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/navigator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1326">
-              <caret line="80" column="14" selection-start-line="80" selection-start-column="14" selection-end-line="80" selection-end-column="14" />
+            <state relative-caret-position="198">
+              <caret line="99" column="22" selection-start-line="99" selection-start-column="22" selection-end-line="99" selection-end-column="22" />
               <folding>
                 <element signature="e#133#162#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="pathCalc_porter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pathCalc_porter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="63" column="31" selection-start-line="63" selection-start-column="31" selection-end-line="63" selection-end-column="31" />
+              <folding>
+                <element signature="e#0#12#0" expanded="true" />
+                <element signature="e#420#498#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -41,8 +57,8 @@
       <file leaf-file-name="RC_client_v2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/RC_client_v2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="612">
-              <caret line="38" column="0" selection-start-line="38" selection-start-column="0" selection-end-line="38" selection-end-column="0" />
+            <state relative-caret-position="0">
+              <caret line="50" column="39" selection-start-line="50" selection-start-column="39" selection-end-line="50" selection-end-column="39" />
               <folding>
                 <element signature="e#393#406#0" expanded="true" />
               </folding>
@@ -50,34 +66,75 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="RC_server.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="RC_server.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/RC_server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="103">
-              <caret line="67" column="30" selection-start-line="67" selection-start-column="30" selection-end-line="67" selection-end-column="30" />
+            <state relative-caret-position="0">
+              <caret line="318" column="35" selection-start-line="318" selection-start-column="35" selection-end-line="318" selection-end-column="35" />
               <folding>
                 <element signature="e#394#407#0" expanded="true" />
-                <element signature="e#2110#2114#0" expanded="false" />
-                <element signature="e#2148#2381#0" expanded="false" />
-                <element signature="e#2473#2736#0" expanded="false" />
-                <element signature="e#2775#2821#0" expanded="false" />
-                <element signature="e#2858#2904#0" expanded="false" />
-                <element signature="e#2941#3230#0" expanded="false" />
-                <element signature="e#3321#3683#0" expanded="false" />
-                <element signature="e#3507#3527#0" expanded="false" />
-                <element signature="e#6181#6745#0" expanded="false" />
-                <element signature="e#6787#8266#0" expanded="false" />
-                <element signature="e#7611#7612#0" expanded="false" />
-                <element signature="e#8699#8961#0" expanded="false" />
-                <element signature="e#8990#10520#0" expanded="false" />
-                <element signature="e#10557#11141#0" expanded="false" />
-                <element signature="e#11542#13668#0" expanded="false" />
-                <element signature="e#13696#13856#0" expanded="false" />
-                <element signature="e#13884#14233#0" expanded="false" />
-                <element signature="e#14504#14946#0" expanded="false" />
-                <element signature="e#15073#15496#0" expanded="false" />
-                <element signature="e#15588#16092#0" expanded="false" />
-                <element signature="e#16161#16602#0" expanded="false" />
+                <element signature="e#1313#2085#0" expanded="false" />
+                <element signature="e#2166#2170#0" expanded="false" />
+                <element signature="e#2204#2437#0" expanded="false" />
+                <element signature="e#2529#2792#0" expanded="false" />
+                <element signature="e#2831#2877#0" expanded="false" />
+                <element signature="e#2914#2960#0" expanded="false" />
+                <element signature="e#2997#3286#0" expanded="false" />
+                <element signature="e#3562#3582#0" expanded="false" />
+                <element signature="e#7395#8874#0" expanded="false" />
+                <element signature="e#8219#8220#0" expanded="false" />
+                <element signature="e#14958#15118#0" expanded="false" />
+                <element signature="e#16850#17354#0" expanded="false" />
+                <element signature="e#17423#17864#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="R1_server.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/R1_server.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="75" column="36" selection-start-line="75" selection-start-column="36" selection-end-line="75" selection-end-column="36" />
+              <folding>
+                <element signature="e#136#149#0" expanded="true" />
+                <element signature="e#1473#2225#0" expanded="false" />
+                <element signature="e#2306#2310#0" expanded="false" />
+                <element signature="e#2344#2738#0" expanded="false" />
+                <element signature="e#2834#3683#0" expanded="false" />
+                <element signature="e#4284#10019#0" expanded="false" />
+                <element signature="e#17165#22060#0" expanded="false" />
+                <element signature="e#22088#22248#0" expanded="false" />
+                <element signature="e#22276#22625#0" expanded="false" />
+                <element signature="e#25126#25979#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="R1_logger.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/R1_logger.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="120" column="17" selection-start-line="0" selection-start-column="0" selection-end-line="141" selection-end-column="9" />
+              <folding>
+                <element signature="e#59#72#0" expanded="true" />
+                <element signature="e#148#214#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="bact1.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/bact1.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="28" column="0" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+              <folding>
+                <element signature="e#90#353#0" expanded="false" />
+                <element signature="e#392#438#0" expanded="false" />
+                <element signature="e#475#521#0" expanded="false" />
+                <element signature="e#558#847#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -86,8 +143,8 @@
       <file leaf-file-name="piClient_R1.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/piClient_R1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="119">
-              <caret line="11" column="30" selection-start-line="11" selection-start-column="30" selection-end-line="11" selection-end-column="30" />
+            <state relative-caret-position="0">
+              <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
               <folding />
             </state>
           </provider>
@@ -107,10 +164,15 @@
       <list>
         <option value="$PROJECT_DIR$/usPlot.py" />
         <option value="$PROJECT_DIR$/graphOnClick.py" />
-        <option value="$PROJECT_DIR$/pathCalc_porter.py" />
         <option value="$PROJECT_DIR$/G0_baseAlgorithm_cs.py" />
         <option value="$PROJECT_DIR$/navigator.py" />
+        <option value="$PROJECT_DIR$/bact1.py" />
+        <option value="$PROJECT_DIR$/../../../../../Shell Eco Marathon/backendv2.py" />
+        <option value="$PROJECT_DIR$/.ipynb_checkpoints/R1_server.py" />
+        <option value="$PROJECT_DIR$/R1_logger.py" />
+        <option value="$PROJECT_DIR$/pathCalc_porter.py" />
         <option value="$PROJECT_DIR$/RC_server.py" />
+        <option value="$PROJECT_DIR$/R1_server.py" />
       </list>
     </option>
   </component>
@@ -137,7 +199,7 @@
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
+    <navigator proportions="" version="1">
       <flattenPackages />
       <showMembers />
       <showModules />
@@ -150,43 +212,7 @@
       <manualOrder />
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="ProjectPane">
-        <subPane>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="R1" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="R1" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="R1" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
-      <pane id="Scope">
-        <subPane subId="Project Files">
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="R1">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
-      <pane id="Scratches" />
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
@@ -195,25 +221,12 @@
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
   </component>
-  <component name="RunManager" selected="Python.pathCalc_porter">
-    <configuration default="false" name="usPlot" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="R1" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/usPlot.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Chatu Docs_MAIN\Sheffield\EEE\Year 4\EEE471\Shef_E3RoboPorter-2016\R1" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.R1_server">
     <configuration default="false" name="pathCalc_porter" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -246,6 +259,60 @@
       <module name="R1" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/graphOnClick.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="backendv2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../../../../../Shell Eco Marathon" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="R1" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../../../../../Shell Eco Marathon/backendv2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="R1_server" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="R1" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/R1_server.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="R1_logger" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="R1" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/R1_logger.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -458,16 +525,20 @@
       <option name="USE_KEYWORD" value="false" />
       <method />
     </configuration>
-    <list size="3">
-      <item index="0" class="java.lang.String" itemvalue="Python.usPlot" />
-      <item index="1" class="java.lang.String" itemvalue="Python.pathCalc_porter" />
-      <item index="2" class="java.lang.String" itemvalue="Python.graphOnClick" />
+    <list size="5">
+      <item index="0" class="java.lang.String" itemvalue="Python.pathCalc_porter" />
+      <item index="1" class="java.lang.String" itemvalue="Python.graphOnClick" />
+      <item index="2" class="java.lang.String" itemvalue="Python.backendv2" />
+      <item index="3" class="java.lang.String" itemvalue="Python.R1_server" />
+      <item index="4" class="java.lang.String" itemvalue="Python.R1_logger" />
     </list>
     <recent_temporary>
-      <list size="3">
-        <item index="0" class="java.lang.String" itemvalue="Python.pathCalc_porter" />
-        <item index="1" class="java.lang.String" itemvalue="Python.graphOnClick" />
-        <item index="2" class="java.lang.String" itemvalue="Python.usPlot" />
+      <list size="5">
+        <item index="0" class="java.lang.String" itemvalue="Python.R1_server" />
+        <item index="1" class="java.lang.String" itemvalue="Python.R1_logger" />
+        <item index="2" class="java.lang.String" itemvalue="Python.pathCalc_porter" />
+        <item index="3" class="java.lang.String" itemvalue="Python.backendv2" />
+        <item index="4" class="java.lang.String" itemvalue="Python.graphOnClick" />
       </list>
     </recent_temporary>
   </component>
@@ -487,28 +558,37 @@
     </task>
     <servers />
   </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.30181542" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.48979592" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329582" sideWeight="0.4969743" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.255627" sideWeight="0.5030257" order="6" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.44694534" sideWeight="0.49394855" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.45498392" sideWeight="0.5060514" order="10" side_tool="true" content_ui="tabs" x="38" y="362" width="1322" height="235" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24962178" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3488746" sideWeight="0.49394855" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33011273" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3504823" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -529,6 +609,11 @@
           <url>file://$PROJECT_DIR$/usPlot.py</url>
           <line>38</line>
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../../../../../Shell Eco Marathon/backendv2.py</url>
+          <line>109</line>
+          <option name="timeStamp" value="17" />
+        </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
         <breakpoint type="python-exception">
@@ -537,7 +622,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="9" />
+      <option name="time" value="35" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
@@ -546,71 +631,6 @@
     </watches-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/R1.ipynb">
-      <provider selected="true" editor-type-id="ipnb-editor">
-        <state>
-          <selected id="-1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/graphOnClick.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="13" column="35" selection-start-line="13" selection-start-column="35" selection-end-line="13" selection-end-column="35" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/navigator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1768">
-          <caret line="105" column="34" selection-start-line="105" selection-start-column="34" selection-end-line="105" selection-end-column="34" />
-          <folding>
-            <element signature="e#133#162#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RC_client_v2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#393#406#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RC_server.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="11" column="0" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-          <folding>
-            <element signature="e#394#407#0" expanded="true" />
-            <element signature="e#2110#2114#0" expanded="false" />
-            <element signature="e#2148#2381#0" expanded="false" />
-            <element signature="e#2473#2736#0" expanded="false" />
-            <element signature="e#2775#2821#0" expanded="false" />
-            <element signature="e#2858#2904#0" expanded="false" />
-            <element signature="e#2941#3230#0" expanded="false" />
-            <element signature="e#3321#3683#0" expanded="false" />
-            <element signature="e#3507#3527#0" expanded="false" />
-            <element signature="e#6181#6745#0" expanded="false" />
-            <element signature="e#6787#8266#0" expanded="false" />
-            <element signature="e#7611#7612#0" expanded="false" />
-            <element signature="e#8699#8961#0" expanded="false" />
-            <element signature="e#8990#10520#0" expanded="false" />
-            <element signature="e#10557#11141#0" expanded="false" />
-            <element signature="e#11542#13668#0" expanded="false" />
-            <element signature="e#13696#13856#0" expanded="false" />
-            <element signature="e#13884#14233#0" expanded="false" />
-            <element signature="e#14504#14946#0" expanded="false" />
-            <element signature="e#15073#15496#0" expanded="false" />
-            <element signature="e#15588#16092#0" expanded="false" />
-            <element signature="e#16161#16602#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/piClient_R1.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="306">
@@ -962,68 +982,128 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pathCalc_porter.py">
+    <entry file="file://C:/Python27/Lib/threading.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="11" selection-start-line="2" selection-start-column="11" selection-end-line="2" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/piClient_R1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="11" column="30" selection-start-line="11" selection-start-column="30" selection-end-line="11" selection-end-column="30" />
+        <state relative-caret-position="-2064">
+          <caret line="111" column="0" selection-start-line="111" selection-start-column="0" selection-end-line="111" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/navigator.py">
+    <entry file="file://$PROJECT_DIR$/../../../../../Shell Eco Marathon/backendv2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1326">
-          <caret line="80" column="14" selection-start-line="80" selection-start-column="14" selection-end-line="80" selection-end-column="14" />
+        <state relative-caret-position="559">
+          <caret line="118" column="19" selection-start-line="118" selection-start-column="19" selection-end-line="118" selection-end-column="19" />
           <folding>
-            <element signature="e#133#162#0" expanded="true" />
+            <element signature="e#89#107#0" expanded="true" />
+            <element signature="e#303#1705#0" expanded="false" />
+            <element signature="e#1746#2126#0" expanded="false" />
+            <element signature="e#2159#2403#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/RC_client_v2.py">
+    <entry file="file://$PROJECT_DIR$/bact1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="612">
-          <caret line="38" column="0" selection-start-line="38" selection-start-column="0" selection-end-line="38" selection-end-column="0" />
+        <state relative-caret-position="0">
+          <caret line="28" column="0" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
           <folding>
-            <element signature="e#393#406#0" expanded="true" />
+            <element signature="e#90#353#0" expanded="false" />
+            <element signature="e#392#438#0" expanded="false" />
+            <element signature="e#475#521#0" expanded="false" />
+            <element signature="e#558#847#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/RC_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="103">
-          <caret line="67" column="30" selection-start-line="67" selection-start-column="30" selection-end-line="67" selection-end-column="30" />
+        <state relative-caret-position="0">
+          <caret line="318" column="35" selection-start-line="318" selection-start-column="35" selection-end-line="318" selection-end-column="35" />
           <folding>
             <element signature="e#394#407#0" expanded="true" />
-            <element signature="e#2110#2114#0" expanded="false" />
-            <element signature="e#2148#2381#0" expanded="false" />
-            <element signature="e#2473#2736#0" expanded="false" />
-            <element signature="e#2775#2821#0" expanded="false" />
-            <element signature="e#2858#2904#0" expanded="false" />
-            <element signature="e#2941#3230#0" expanded="false" />
-            <element signature="e#3321#3683#0" expanded="false" />
-            <element signature="e#3507#3527#0" expanded="false" />
-            <element signature="e#6181#6745#0" expanded="false" />
-            <element signature="e#6787#8266#0" expanded="false" />
-            <element signature="e#7611#7612#0" expanded="false" />
-            <element signature="e#8699#8961#0" expanded="false" />
-            <element signature="e#8990#10520#0" expanded="false" />
-            <element signature="e#10557#11141#0" expanded="false" />
-            <element signature="e#11542#13668#0" expanded="false" />
-            <element signature="e#13696#13856#0" expanded="false" />
-            <element signature="e#13884#14233#0" expanded="false" />
-            <element signature="e#14504#14946#0" expanded="false" />
-            <element signature="e#15073#15496#0" expanded="false" />
-            <element signature="e#15588#16092#0" expanded="false" />
-            <element signature="e#16161#16602#0" expanded="false" />
+            <element signature="e#1313#2085#0" expanded="false" />
+            <element signature="e#2166#2170#0" expanded="false" />
+            <element signature="e#2204#2437#0" expanded="false" />
+            <element signature="e#2529#2792#0" expanded="false" />
+            <element signature="e#2831#2877#0" expanded="false" />
+            <element signature="e#2914#2960#0" expanded="false" />
+            <element signature="e#2997#3286#0" expanded="false" />
+            <element signature="e#3562#3582#0" expanded="false" />
+            <element signature="e#7395#8874#0" expanded="false" />
+            <element signature="e#8219#8220#0" expanded="false" />
+            <element signature="e#14958#15118#0" expanded="false" />
+            <element signature="e#16850#17354#0" expanded="false" />
+            <element signature="e#17423#17864#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R1_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="75" column="36" selection-start-line="75" selection-start-column="36" selection-end-line="75" selection-end-column="36" />
+          <folding>
+            <element signature="e#136#149#0" expanded="true" />
+            <element signature="e#1473#2225#0" expanded="false" />
+            <element signature="e#2306#2310#0" expanded="false" />
+            <element signature="e#2344#2738#0" expanded="false" />
+            <element signature="e#2834#3683#0" expanded="false" />
+            <element signature="e#4284#10019#0" expanded="false" />
+            <element signature="e#17165#22060#0" expanded="false" />
+            <element signature="e#22088#22248#0" expanded="false" />
+            <element signature="e#22276#22625#0" expanded="false" />
+            <element signature="e#25126#25979#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R1_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="120" column="17" selection-start-line="0" selection-start-column="0" selection-end-line="141" selection-end-column="9" />
+          <folding>
+            <element signature="e#59#72#0" expanded="true" />
+            <element signature="e#148#214#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/piClient_R1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RC_client_v2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="50" column="39" selection-start-line="50" selection-start-column="39" selection-end-line="50" selection-end-column="39" />
+          <folding>
+            <element signature="e#393#406#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pathCalc_porter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="63" column="31" selection-start-line="63" selection-start-column="31" selection-end-line="63" selection-end-column="31" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+            <element signature="e#420#498#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/navigator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="99" column="22" selection-start-line="99" selection-start-column="22" selection-end-line="99" selection-end-column="22" />
+          <folding>
+            <element signature="e#133#162#0" expanded="true" />
           </folding>
         </state>
       </provider>

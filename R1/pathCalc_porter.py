@@ -8,7 +8,7 @@ import matplotlib as mpl
 from matplotlib import pyplot
 
 recPenalty = 0.2
-momentumBonus = 0.1
+momentumBonus = 0.5
 tempX = 0
 tempY = 0
 
