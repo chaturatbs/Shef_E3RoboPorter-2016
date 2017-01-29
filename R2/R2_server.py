@@ -264,7 +264,7 @@ class autoPilotThread(MultiThreadBase):
                         dataReady = True
 
                 # wait till its aligned
-                while (abs(self.angleChange) > 3) and autoPilot:  # Add boundaries
+                while (abs(self.angleChange) > 3) and autoPilot and not exitFlag:  # Add boundaries
                     # keep checking the angle
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
                     self.angleChange = 90 - porterOrientation  # right if +ve left if -ve
@@ -323,7 +323,7 @@ class autoPilotThread(MultiThreadBase):
                         dataReady = True
 
                 # wait till its aligned
-                while (abs(self.angleChange) > 3) and autoPilot:  # Add boundaries
+                while (abs(self.angleChange) > 3) and autoPilot and not exitFlag:  # Add boundaries
                     # keep checking the angle
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
 
@@ -348,7 +348,7 @@ class autoPilotThread(MultiThreadBase):
                     speedVector = [self.autoSpeed, self.autoSpeed]
                     dataReady = True
 
-                while (distanceToGoal > 30) and autoPilot: #change this to allow for looping the whole block from else till at goal.
+                while (distanceToGoal > 30) and autoPilot and not exitFlag: #change this to allow for looping the whole block from else till at goal.
                     self.dX = targetLocation[0] - porterLocation_Global[0]
                     self.dY = targetLocation[1] - porterLocation_Global[1]
                     distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
@@ -892,7 +892,8 @@ class ttsThread(MultiThreadBase):
         global speech
 
         engine = pyttsx.init()
-
+        rate = engine.getProperty('rate')
+        engine.setProperty('rate', rate - 20)
         while not exitFlag:
             if not speechQueue.empty():
                 engine.say(speechQueue.get())
@@ -1033,10 +1034,10 @@ imuThread = IMUDataThread(1, "IMU Thread")
 imuThread.start()
 threads.append(imuThread)
 
-# logging.info("Starting speech Thread...")
-# speechThread = ttsThread(2, "Speech Thread")
-# speechThread.start()
-# threads.append(speechThread)
+logging.info("Starting speech Thread...")
+speechThread = ttsThread(2, "Speech Thread")
+speechThread.start()
+threads.append(speechThread)
 
 logging.info("Starting Autopilot Thread")
 # speechQueue.put("Turning On Autopilot")
@@ -1197,7 +1198,7 @@ while sysRunning:
                     # Engage/Disengage Auto Pilot
                     if autoPilot:
                         logging.info("Turning OFF Autopilot")
-                        speechQueue.put("Turning Off Autopilot. Bye Bye")
+                        speechQueue.put("Turning Off Autopilot")
                         autoPilot = False
                         with threadLock:
                             lastCommand = "x"
