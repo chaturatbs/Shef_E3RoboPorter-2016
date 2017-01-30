@@ -10,6 +10,13 @@
             </list>
           </settings>
         </remote-mappings>
+        <remote-mappings server-id="python@ssh://pi@192.168.26.102:22/usr/bin/python">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/home/pi/FYP/R2" />
+            </list>
+          </settings>
+        </remote-mappings>
       </list>
     </list>
   </component>
