@@ -124,7 +124,7 @@ except Exception as e:
 while True:
     data = s.recv(1024)
     data.rstrip("\n")
-    print (data)
+    #print (data)
 
     try:
         viewerCon.write(data)

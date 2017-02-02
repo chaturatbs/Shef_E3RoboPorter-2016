@@ -70,7 +70,7 @@ global obstruction
 
 USAvgDistances = [0., 0., 0., 0., 0., 0.]
 obstruction = False
-USThresholds = [100, 30, 30]
+USThresholds = [50, 30, 30]
 
 ##--Multi-Threading
 global threadLock
@@ -123,8 +123,9 @@ global distanceToGoal
 
 tMat = numpy.array([0, 0])
 theta = 0.0
+targetLocation = [0,0]
 
-porterLocation_Global = numpy.array([None, None])
+porterLocation_Global = numpy.array([-1, -1])
 porterLocation_Local = numpy.array([0, 0])
 porterOrientation = 0.0  # from north heading (in degrees?)
 distanceToGoal = 0
@@ -198,7 +199,7 @@ class IMUDataThread(MultiThreadBase):
                 # print("r: %f p: %f y: %f" % (math.degrees(globalIMUFusion[0]),math.degrees(globalIMUFusion[1]), math.degrees(globalIMUFusion[2])))
                 time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)
 
-            if pulsesQueue.not_empty():
+            if not pulsesQueue.empty():
                 self.pulseData = pulsesQueue.get()
                 pulsesQueue.task_done()
 
@@ -279,7 +280,7 @@ class autoPilotThread(MultiThreadBase):
                 porterLocation_Global = porterLocation_Local
                 # if not the same put robot into exploration more till it finds a QR code, then position.
                 # go to global XY
-                targetLocation = [100, 100]
+                targetLocation = [-100, 100]
                 # find the required angle change to align to global grid
                 logging.info("Looking for north")
                 speechQueue.put("Looking for north")
@@ -303,13 +304,12 @@ class autoPilotThread(MultiThreadBase):
                 # wait till its aligned
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
                     # keep checking the angle
-                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
-                                  (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
                     self.angleChange = 90 - porterOrientation  # right if +ve left if -ve
                     # add here to check >180 to flip direction
                     if self.angleChange > 180:
                         self.angleChange -= 360  # if >180 turn left instead of right
+                    time.sleep(0.001)
                 logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
                              (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
                 # stop turning
@@ -370,11 +370,10 @@ class autoPilotThread(MultiThreadBase):
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
                     # keep checking the angle
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
-                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
-                                 (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
                     self.angleChange = self.angleToGoal - porterOrientation
                     if self.angleChange < -180:
                         self.angleChange += 360
+                    time.sleep(0.001)
 
                 logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
                              (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
@@ -512,55 +511,55 @@ class debugThread(MultiThreadBase):
                 try:
                     logging.debug("Sending info to Logger")
                     # Start Flag
-                    self.clientConnection.send("#")
+                    self.clientConnection.send("#") #0
                     # Time
                     self.clientConnection.send(time.ctime() + ',')
                     # Ultrasonic data
-                    self.clientConnection.send(str(USAvgDistances[0]) + ",")
+                    self.clientConnection.send(str(USAvgDistances[0]) + ",") #1
                     self.clientConnection.send(str(USAvgDistances[1]) + ",")
                     self.clientConnection.send(str(USAvgDistances[2]) + ",")
                     self.clientConnection.send(str(USAvgDistances[3]) + ",")
                     self.clientConnection.send(str(USAvgDistances[4]) + ",")
-                    self.clientConnection.send(str(USAvgDistances[5]) + ",")
+                    self.clientConnection.send(str(USAvgDistances[5]) + ",") #6
                     # motor speeds
                     # demanded motor speeds
-                    self.clientConnection.send(str(speedVector[0]) + ",")
+                    self.clientConnection.send(str(speedVector[0]) + ",") #7
                     self.clientConnection.send(str(speedVector[1]) + ",")
                     #actual speeds
-                    self.clientConnection.send(str(wheelSpeeds[0]) + ",")
+                    self.clientConnection.send(str(wheelSpeeds[0]) + ",") #9
                     self.clientConnection.send(str(wheelSpeeds[1]) + ",")
                     #POSITIONS
                     #target
-                    self.clientConnection.send(str(targetLocation[0]) + ",")
+                    self.clientConnection.send(str(targetLocation[0]) + ",") #11
                     self.clientConnection.send(str(targetLocation[1]) + ",")
                     #Porter_global
-                    self.clientConnection.send(str(porterLocation_Global[0]) + ",")
+                    self.clientConnection.send(str(porterLocation_Global[0]) + ",") #13
                     self.clientConnection.send(str(porterLocation_Global[1]) + ",")
                     #Porter_local
-                    self.clientConnection.send(str(porterLocation_Local[0]) + ",")
-                    self.clientConnection.send(str(porterLocation_Local[0]) + ",")
+                    self.clientConnection.send(str(porterLocation_Local[0]) + ",") #15
+                    self.clientConnection.send(str(porterLocation_Local[1]) + ",")
                     #porterOrientation
-                    self.clientConnection.send(str(porterOrientation[0]) + ",")
+                    self.clientConnection.send(str(porterOrientation) + ",") #17
                     # AHRS # FOR VALIDATION ONLY
                     # yaw
-                    self.clientConnection.send(str(globalIMUFusion[2]) + ",")
+                    self.clientConnection.send(str(globalIMUFusion[2]) + ",") #18
 
 
                     # thread life status
-                    self.clientConnection.send(str(threadLock.locked()) + ",")
+                    self.clientConnection.send(str(threadLock.locked()) + ",") #19
                     # current lock
 
                     # safety staus
-                    self.clientConnection.send(str(safetyOn) + ",")
+                    self.clientConnection.send(str(safetyOn) + ",") #20
                     # obstruction status
-                    self.clientConnection.send(str(obstruction) + ",")
+                    self.clientConnection.send(str(obstruction) + ",") #21
                     # data status
-                    self.clientConnection.send(str(dataReady))
+                    self.clientConnection.send(str(dataReady)) #22
 
                     self.clientConnection.send("\n")
 
                     # self.logOverNetwork()
-                    time.sleep(0.5)
+                    time.sleep(0.1)
                 except Exception as e:
                     logging.error("%s", str(e))
                     self.debugClient = False
@@ -1101,6 +1100,7 @@ logging.info("Starting speech Thread...")
 speechThread = ttsThread(2, "Speech Thread")
 speechThread.start()
 threads.append(speechThread)
+#speechQueue.put("Initialising control threads")
 
 logging.info("Starting Autopilot Thread")
 # speechQueue.put("Turning On Autopilot")
