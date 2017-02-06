@@ -199,12 +199,13 @@ class IMUDataThread(MultiThreadBase):
                 # print("r: %f p: %f y: %f" % (math.degrees(globalIMUFusion[0]),math.degrees(globalIMUFusion[1]), math.degrees(globalIMUFusion[2])))
                 time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)
 
-            if not pulsesQueue.empty():
-                self.pulseData = pulsesQueue.get()
-                pulsesQueue.task_done()
+            # if not pulsesQueue.empty():
+            #     self.pulseData = pulsesQueue.get()
+            #     pulsesQueue.task_done()
 
             if lastCommand == "f" :
-                self.moveLocation(int(self.pulseData[0][1:]), int(self.pulseData[1][1:]))
+                pass
+                #self.moveLocation(int(self.pulseData[0][1:]), int(self.pulseData[1][1:]))
 
     # ONLY INVOKE WHEN MOVING FORWARDS
     def moveLocation(self, lPulses, rPulses):  # assume that it doesnt "move" when rotating
@@ -284,6 +285,7 @@ class autoPilotThread(MultiThreadBase):
                 # find the required angle change to align to global grid
                 logging.info("Looking for north")
                 speechQueue.put("Looking for north")
+                time.sleep(1)
                 porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
                 # orient
                 # make the robot rotate
@@ -292,13 +294,13 @@ class autoPilotThread(MultiThreadBase):
                     self.angleChange -= 360  # if >180 turn left instead of right
 
                 with threadLock:
-                    if self.angleChange > 3:
+                    if self.angleChange > self.alignmentThreshold:
                         lastCommand = "r"
-                        speedVector = [-self.autoSpeed, self.autoSpeed]
-                        dataReady = True
-                    elif self.angleChange < 3:
-                        lastCommand = "l"
                         speedVector = [self.autoSpeed, -self.autoSpeed]
+                        dataReady = True
+                    elif self.angleChange < self.alignmentThreshold:
+                        lastCommand = "l"
+                        speedVector = [-self.autoSpeed, self.autoSpeed]
                         dataReady = True
 
                 # wait till its aligned
@@ -307,6 +309,8 @@ class autoPilotThread(MultiThreadBase):
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
                     self.angleChange = 90 - porterOrientation  # right if +ve left if -ve
                     # add here to check >180 to flip direction
+                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
+                                 (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
                     if self.angleChange > 180:
                         self.angleChange -= 360  # if >180 turn left instead of right
                     time.sleep(0.001)
@@ -320,6 +324,7 @@ class autoPilotThread(MultiThreadBase):
                 # aligned to x axis
                 speechQueue.put("Aligned to X axis")
                 logging.info("Aligned to X axis")
+                time.sleep(1)
 
                 self.dX = targetLocation[0] - porterLocation_Global[0]
                 self.dY = targetLocation[1] - porterLocation_Global[1]
@@ -354,21 +359,24 @@ class autoPilotThread(MultiThreadBase):
                     self.angleChange += 360
 
                 with threadLock:
-                    if self.angleChange > 0:
+                    if self.angleChange > self.alignmentThreshold:
                         lastCommand = "r"
-                        speedVector = [-self.autoSpeed, self.autoSpeed]
-                        dataReady = True
-                    elif self.angleChange < 0:
-                        lastCommand = "l"
                         speedVector = [self.autoSpeed, -self.autoSpeed]
+                        dataReady = True
+                    elif self.angleChange < self.alignmentThreshold:
+                        lastCommand = "l"
+                        speedVector = [-self.autoSpeed, self.autoSpeed]
                         dataReady = True
 
                 speechQueue.put("Looking for the target destination")
                 logging.info("Looking for the target destination")
+                time.sleep(1)
 
                 # wait till its aligned
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
                     # keep checking the angle
+                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
+                                 (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
                     self.angleChange = self.angleToGoal - porterOrientation
                     if self.angleChange < -180:
@@ -385,7 +393,7 @@ class autoPilotThread(MultiThreadBase):
                     # aligned to x axis
                 speechQueue.put("Aligned to the target destination")
                 logging.info("Aligned to the target destination")
-
+                time.sleep(1)
                 # find distance to Goal
                 distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
                 # move to destination
@@ -900,8 +908,7 @@ class usDataThread(MultiThreadBase):
         # if safetyOn:
         try:
             if lastCommand == "f":
-                if (int(USAvgDistances[0]) < USThresholds[
-                    0]):  # or (int(USAvgDistances[1]) < USThresholds[1]) or (int(USAvgDistances[2]) < USThresholds[1]):
+                if (int(USAvgDistances[0]) < USThresholds[0]):  # or (int(USAvgDistances[1]) < USThresholds[1]) or (int(USAvgDistances[2]) < USThresholds[1]):
                     logging.warning("FRONT TOO CLOSE. STOPPPPP!!!")
                     if obstruction != True:
                         with threadLock:
@@ -1061,9 +1068,9 @@ def cmdToSpeeds(inputCommand):
     elif inputCommand[0] == "b":
         return -mSpeed, -mSpeed
     elif inputCommand[0] == "r":
-        return mSpeed, -mSpeed
+        return (mSpeed-5), -(mSpeed-5)
     elif inputCommand[0] == "l":
-        return -mSpeed, mSpeed
+        return -(mSpeed-5), (mSpeed-5)
 
 
 def get_ip_address(ifname):
