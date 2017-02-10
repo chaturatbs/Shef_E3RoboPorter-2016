@@ -21,30 +21,30 @@ import pyttsx
 import math
 
 from sys import platform
-
+#if on linux, import functions for IMU and ip
 if platform == "linux" or platform == "linux2":
     import fcntl  # linux specific (keep note)
     import sys, getopt
 
     sys.path.append('.')
-    import RTIMU
+    import RTIMU #imu library
     import os.path
 
 # -logging config
 import logging
 import logging.handlers
-
+#the mask for data logging
 logging.basicConfig(format='%(asctime)s - (%(threadName)s) %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
-                    level=logging.INFO)
+                    level=logging.INFO) #change the logging level here to change the display verbosity
 
 ###---Global Variables-------------
 
 
 ##--Motor Commands
-global lastCommand
-global speedVector
-global dataReady
-global wheelSpeeds
+global lastCommand #holds the last command that was sent to the motor controllers
+global speedVector #demanded wheel speeds (left, right)
+global dataReady #boolean to let the threads know that data is ready to be sent to the motors
+global wheelSpeeds #measured wheel speeds
 
 lastCommand = ""
 speedVector = [0, 0]
@@ -56,28 +56,27 @@ dataReady = False
 # motorConnected = False
 
 ##--Serial Connections
-global MotorConn
-global USConn
+global MotorConn #serial handle for the motor controller
+global USConn #serial handle for the Ultrasonic controller
 
 ##--Safety
-global safetyOn
-
+global safetyOn #Boolean for the state of the safety toggle (used only in manual control)
 safetyOn = True
 
 ##--US data
-global USAvgDistances
-global obstruction
+global USAvgDistances #vector holding the average US distances
+global obstruction #Boolean for comminicating whether there is an obstruction in the direction of travel
 
 USAvgDistances = [0., 0., 0., 0., 0., 0.]
 obstruction = False
-USThresholds = [50, 30, 30]
+USThresholds = [50, 30, 30] #threasholds for treating objects as obstacles [front,side,back]
 
 ##--Multi-Threading
-global threadLock
-global queueLock
-global debugQueue
-global speechQueue
-global pulsesQueue
+global threadLock #lock to be used when changing global variables
+global queueLock #
+global debugQueue #
+global speechQueue #Queue holding sentences to be spoken
+global pulsesQueue #Queue holding the measured wheel encoder pulses
 
 threadLock = threading.Lock()
 queueLock = threading.Lock()
@@ -85,88 +84,93 @@ debugQueue = Queue.Queue(10)
 speechQueue = Queue.Queue(10)
 pulsesQueue = Queue.Queue(10)
 
-threads = []
+threads = [] #Array holding information on the currently running threads
 
 # -QR Codes
-global QRdetected
-global QRdata
+global QRdetected #Boolean for the QRcode detection status
+global QRdata #String read from the QR code
 
 QRdetected = False
 QRdata = ""
 
 # -IMU data
-global imu
-global imuEnable
-global globalIMUData
-global globalIMUFusion
+global imu #Handle for the IMU
+global imuEnable #Boolean holding whether IMU is connected
+global globalIMUData #Data Read from the IMU
+global globalIMUFusion #AHRS information form the IMU (derived from globalIMUData )
 
-imuEnable = False
+imuEnable = False #IMU is not initialised
 
-if platform == "linux" or platform == "linux2":
-    IMUSettingsFile = RTIMU.Settings("RTIMULib")
-    imu = RTIMU.RTIMU(IMUSettingsFile)
-    imuEnable = True
+
+if platform == "linux" or platform == "linux2": #if running on linux
+    IMUSettingsFile = RTIMU.Settings("RTIMULib") #load IMU caliberation file
+    imu = RTIMU.RTIMU(IMUSettingsFile) #initialise the IMU handle
+    imuEnable = True #IMU is initialised
 
 ##--Auto Pilot
-global autoPilot
-
-autoPilot = False
+global autoPilot #Boolean for turning on/off autopilot
+autoPilot = False #autopilot turned off
 
 # -Porter Localisation
-global tMat
-global theta
-global porterLocation_Global
-global porterLocation_Local
-global porterOrientation
-global targetLocation  # global ref
-global distanceToGoal
+global tMat #
+global theta #
+global porterLocation_Global #vector holding global location [x,y] in cm
+global porterLocation_Local #vector holding local location [x,y] in cm
+global porterOrientation #angle from north (between -180,180) in degrees
+global targetLocation  #Target location in global coordinates in cm
+global distanceToGoal #Distance to goal in cm
 
 tMat = numpy.array([0, 0])
 theta = 0.0
 targetLocation = [0,0]
 
-porterLocation_Global = numpy.array([-1, -1])
+porterLocation_Global = numpy.array([-1, -1]) #set location to "undefined"
 porterLocation_Local = numpy.array([0, 0])
 porterOrientation = 0.0  # from north heading (in degrees?)
 distanceToGoal = 0
 
 # -Debug
-debug = True
+debug = True #turns on verbose logging to SCREEN
 
 ##-System State Variables
-localCtrl = True
-sysRunning = False
-cmdExpecting = False
-exitFlag = 0
-dataInput = ""
+localCtrl = True #Local control = commands sent through SSH not TCP/IP
+sysRunning = False #
+cmdExpecting = False #
+exitFlag = False #set exitFlag = True initiate system shutdown
+dataInput = "" #Data string from the user (SSH/TCP)
 
 
 ###---Class Definitions
 # create a class for the data to be sent over ait
 
-class MultiThreadBase(threading.Thread):
-    def __init__(self, threadID, name):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-        self.avgRuntime = 0.
-        self.startTime = 0.
-        self.endTime = 0.
-        self.avgCounter = 0
-        self.loopDebugInterval = 10
-        self.debug = False
+class MultiThreadBase(threading.Thread): #Parent class for threading
+    def __init__(self, threadID, name): #Class constructor
+        threading.Thread.__init__(self) #Initiate thread
+        self.threadID = threadID #Thread number
+        self.name = name #Readable thread name
 
-    def loopStartFlag(self):
-        self.startTime = time.localtime()
+        #thread loop performance profiling
+        self.avgRuntime = 0. #loop average runtime
+        self.startTime = 0. #loop start time
+        self.endTime = 0. #loop end time
+        self.avgCounter = 0 #number of loops
+        self.loopProfilingInterval = 10 #loop averaging interval
+        self.profiling = False #profiling state. set true in to calculate run times globally.
+            #if you want to profile a single thread, change this in the child thread
+            #Note - the system will run much slower when profiling
+            #STILL NOT FULLY IMPLEMENTED. DO NOT SET TO TRUE
+
+    def loopStartFlag(self): #run at the start of the loop
+        self.startTime = time.localtime() #record the start time of the loop
 
     def loopEndFlag(self):
         self.startTime = time.localtime()
 
     def loopRunTime(self):
-        self.avgRuntime += ((self.endTime - self.startTime) - self.avgRuntime) / self.loopDebugInterval
+        self.avgRuntime += ((self.endTime - self.startTime) - self.avgRuntime) / self.loopProfilingInterval
         self.avgCounter += 1
 
-        if self.avgCounter == self.loopDebugInterval:
+        if self.avgCounter == self.loopProfilingInterval:
             # print (self.name + " Avg loop Runtime - " + str(self.avgRuntime))
             logging.debug("Avg loop Runtime - %s", str(self.avgRuntime))
             self.avgCounter = 0
@@ -177,57 +181,65 @@ class IMUDataThread(MultiThreadBase):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.pulseData = ["",""]
+        self.pulseData = ["",""] #pulses counted by the motor controller
 
     def run(self):
         global globalIMUData
         global globalIMUFusion
         global imu
 
-        logging.info("trying to read IMU")
-        logging.info("imu is %s", str(imu))
-        if imu.IMUInit():
-            logging.info("IMU init successful")
+        #Log
+        logging.info("Trying to read IMU")
+        logging.info("IMU is %s", str(imu))
+
+        if imu.IMUInit(): #if the IMU is initiated...
+            logging.info("IMU init successful") #...say so on the log
         else:
-            logging.info("IMU init failed :/")
+            logging.info("IMU init failed :/") #...or otherwise
 
-        while not exitFlag:
-            if imu.IMURead():
-                # logging.info("Read IMU")
-                globalIMUData = imu.getIMUData()
-                globalIMUFusion = globalIMUData["fusionPose"]
-                # print("r: %f p: %f y: %f" % (math.degrees(globalIMUFusion[0]),math.degrees(globalIMUFusion[1]), math.degrees(globalIMUFusion[2])))
-                time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)
+        while not exitFlag: #while the system isn't in shutdown mode
+            if imu.IMURead(): #if data is available from the IMU...
+                logging.debug("Reading IMU")
+                globalIMUData = imu.getIMUData() #read the IMU data into the global variable
+                globalIMUFusion = globalIMUData["fusionPose"] #extract AHRS fusion info
+                time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0) #delay to sync with the recomended poll rate of the IMU
 
-            # if not pulsesQueue.empty():
-            #     self.pulseData = pulsesQueue.get()
-            #     pulsesQueue.task_done()
 
-            if lastCommand == "f" :
-                pass
-                #self.moveLocation(int(self.pulseData[0][1:]), int(self.pulseData[1][1:]))
+            # if not pulsesQueue.empty(): #if theres data on the pulse Queue...
+            #     self.pulseData = pulsesQueue.get() #...get data
+                # Convert to distance and do what needs to be done
+            #     pulsesQueue.task_done() #set task complete in the Queue. (othewise the system will no be able to shut down)
+
+            #NEED TO ADD SOME STUFF HERE TO TRANSLATE THE MOTION OF THE ROBOT BASED ON THE PULSE DATA
+            # if lastCommand == "f" :
+            #     pass
+            #     #self.moveLocation(int(self.pulseData[0][1:]), int(self.pulseData[1][1:]))
 
     # ONLY INVOKE WHEN MOVING FORWARDS
-    def moveLocation(self, lPulses, rPulses):  # assume that it doesnt "move" when rotating
+    def moveLocation(self, lPulses, rPulses): #function for calculating the distance moved
+        # Assume that it doesnt "move" when rotating
         # Need to check if this function is mathematically sound for all r, theta.
         global porterLocation_Global
         global wheelSpeeds
 
-        timeInterval = 0.5
-        wheelRadius = 20  # cm
+        timeInterval = 0.5 #sampling interval of the motor controller
+        wheelRadius = 20
         pulsesPerRev = 360
 
+        #find the wheel speeds
         wheelSpeeds[0] = ((lPulses / timeInterval) * 60) / pulsesPerRev
         wheelSpeeds[1] = ((rPulses / timeInterval) * 60) / pulsesPerRev
 
+        #find the distance moved
         lDist = (2 * numpy.pi * lPulses / pulsesPerRev) * wheelRadius
         rDist = (2 * numpy.pi * rPulses / pulsesPerRev) * wheelRadius
 
-        r = (lDist + rDist) / 2  # take the average for now.
 
-        # r is the distance traveled along the hyp
-        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - porterOrientation)
-        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - porterOrientation)
+        r = (lDist + rDist) / 2  # take the average of the distances for now.
+
+        # r is the staight line distance traveled... so find x,y components
+        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - porterOrientation) #x component
+        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - porterOrientation) #y component
 
 
 class autoPilotThread(MultiThreadBase):
@@ -239,19 +251,20 @@ class autoPilotThread(MultiThreadBase):
         # self.targetPosition = [0,0]
         # self.localPosition = [0,0]
         # self.angleFromNorth = 0
-        self.angleToGoal = 0
-        self.angleChange = 0
+        self.angleToGoal = 0 #angle between the goal and the robot
+        self.angleChange = 0 #angle change required
         self.alignmentThreshold = 5 #alignment error in degrees
         # self.distanceToGo = 0
         self.dX = 0
         self.dY = 0
-        self.autoSpeed = 10
+        self.autoSpeed = 10 #autopilot movement speed
 
-        self.distQuantise = 30
+        self.distQuantise = 30 #path re-calculation distance
 
-        self.recPenalty = 0.2
-        self.momentumBonus = 0.5
-        self.alpha = 1
+        #path-finding parameters
+        self.recPenalty = 0.2 #penalty for recursion
+        self.momentumBonus = 0.5 #bonus for momentum conservation
+        self.alpha = 1 #
         self.beta = 10
 
         # tempX = 0
@@ -270,62 +283,64 @@ class autoPilotThread(MultiThreadBase):
         global autoPilot
         # global globalIMUFusion
 
-        while not exitFlag:
-            if not autoPilot:
-                if imuEnable:
-                    pass
-                    # logging.debug("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),(numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
-                time.sleep(1)
-            else:
-                # for now assume local position is the same as global
-                porterLocation_Global = porterLocation_Local
-                # if not the same put robot into exploration more till it finds a QR code, then position.
-                # go to global XY
-                targetLocation = [-100, 100]
+        while not exitFlag: #while the system isn't in shutdown mode
+            if not autoPilot: #if autopilot is disabled...
+                time.sleep(1) #...sleep for a bit ...zzzzzzz
+            else: #if in autopilot mode...
+                porterLocation_Global = porterLocation_Local # for now assume local position is the same as global
+                    # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
+
+                targetLocation = [-100, 100] # go to global XY = -100,100
+
                 # find the required angle change to align to global grid
                 logging.info("Looking for north")
-                speechQueue.put("Looking for north")
-                time.sleep(1)
-                porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
-                # orient
-                # make the robot rotate
-                self.angleChange = 90 - porterOrientation  # right if +ve left if -ve
-                if self.angleChange > 180:
-                    self.angleChange -= 360  # if >180 turn left instead of right
+                speechQueue.put("Looking for north") #vocalise
+                time.sleep(1) #sleep for presentation purposes
+                porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # get Yaw Data
 
-                with threadLock:
-                    if self.angleChange > self.alignmentThreshold:
-                        lastCommand = "r"
-                        speedVector = [self.autoSpeed, -self.autoSpeed]
-                        dataReady = True
-                    elif self.angleChange < self.alignmentThreshold:
+                # Orienting to X-axis...
+                self.angleChange = 90 - porterOrientation #find required angle change
+                    # right if +ve left if -ve
+                if self.angleChange > 180: # if >180 turn left instead of right
+                    self.angleChange -= 360
+
+                with threadLock: #with exclusive global variable access...
+                    if self.angleChange > self.alignmentThreshold: #if need to turn right
+                        lastCommand = "r" #set the command to be right (for obstacle avoidance purposes)
+                        speedVector = [self.autoSpeed, -self.autoSpeed] #set the required speeds
+                        dataReady = True #this signals the motor control thread that there is data to be sent
+                    elif self.angleChange < self.alignmentThreshold: #if need to turn left
                         lastCommand = "l"
                         speedVector = [-self.autoSpeed, self.autoSpeed]
                         dataReady = True
 
                 # wait till its aligned
-                while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
-                    # keep checking the angle
+                while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  #while not aligned
+                        # Add boundaries
+                    # keep calculating the angle change required
                     porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
                     self.angleChange = 90 - porterOrientation  # right if +ve left if -ve
-                    # add here to check >180 to flip direction
-                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
-                                 (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
                     if self.angleChange > 180:
                         self.angleChange -= 360  # if >180 turn left instead of right
-                    time.sleep(0.001)
+                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
+                                     (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2]))) #for debugging purposes
+                    time.sleep(0.001) #sleep a bit so that the CPU isnt overloaded
+
                 logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
                              (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
+
                 # stop turning
                 with threadLock:
                     lastCommand = "x"
                     speedVector = [0, 0]
                     dataReady = True
-                # aligned to x axis
+
+                # aligned to x axis... YAY!
                 speechQueue.put("Aligned to X axis")
                 logging.info("Aligned to X axis")
                 time.sleep(1)
 
+                #find the angle of the goal from north
                 self.dX = targetLocation[0] - porterLocation_Global[0]
                 self.dY = targetLocation[1] - porterLocation_Global[1]
 
@@ -354,6 +369,7 @@ class autoPilotThread(MultiThreadBase):
                 # at this point angleToGoal is defined relative to north
                 # if this works remove redundant IF statements. Currently used only for debugging.
 
+                #same as before, finding the angle that needs to be changed
                 self.angleChange = self.angleToGoal - porterOrientation
                 if self.angleChange < -180:
                     self.angleChange += 360
@@ -394,12 +410,14 @@ class autoPilotThread(MultiThreadBase):
                 speechQueue.put("Aligned to the target destination")
                 logging.info("Aligned to the target destination")
                 time.sleep(1)
+
                 # find distance to Goal
                 distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
                 # move to destination
                 speechQueue.put("Moving to the target")
                 logging.info("Moving to Target")
 
+                #COMPLETE THIS BIT
                 # with threadLock:
                 #     lastCommand = "f"
                 #     speedVector = [self.autoSpeed, self.autoSpeed]
@@ -417,9 +435,7 @@ class autoPilotThread(MultiThreadBase):
 
                 speechQueue.put("Successfully arrived at the target")
                 logging.info("Successfully arrived at the target")
-                autoPilot = False
-
-##there needs a function that changes the porterLocationGlobal based on orientation and wheel rotation
+                autoPilot = False #turn off autopilot at the end of the maneuver
 
     ###TO BE IMPLEMENTED
     ##AutoPilot motion to be quantised to distQuantise
@@ -497,8 +513,8 @@ class debugThread(MultiThreadBase):
         self.startTime = 0.
         self.endTime = 0.
         self.avgCounter = 0
-        self.loopDebugInterval = 10
-        self.debug = False
+        self.loopProfilingInterval = 10
+        self.profiling = False
 
         self.debugServer = False
         self.debugClient = False
@@ -652,7 +668,7 @@ class motorDataThread(MultiThreadBase):
         self.threadID = threadID
         self.name = name
         self.actionState = 0
-        self.debug = False
+        self.profiling = False
         self.oldVector = [0, 0]
         self.hexData = True
         self.lastRandomCode = "R"
@@ -662,7 +678,7 @@ class motorDataThread(MultiThreadBase):
         # self.startTime = 0.
         # self.endTime = 0.
         # self.avgCounter = 0
-        # self.loopDebugInterval = 10
+        # self.loopProfilingInterval = 10
         # self.avgRuntime = 0
 
     def run(self):
@@ -690,18 +706,18 @@ class motorDataThread(MultiThreadBase):
                         speechQueue.put("Obstacle removed. Proceeding to destination")
                         logging.info("Obstacle removed. Proceeding to destination")
                         self.send_serial_data(speedVector)
-                elif safetyOn:
+                elif safetyOn: #if not autopilot and the safety is on
                     if lastSent != [0, 0]:
                         logging.debug("Setting Speed Vector")
                         with threadLock:
                             speedVector = [0, 0]
                             dataReady = False
                         self.send_serial_data(speedVector)
-                elif lastSent != speedVector:
-                    logging.warning("Obstacle Detected But Safety OFF...")
+                elif lastSent != speedVector: #otherwise...
+                    logging.warning("Obstacle Detected But Safety OFF...") #give a warning, but dont do anything to stop
                     self.send_serial_data(speedVector)
 
-            elif dataReady and (lastSent != speedVector):
+            elif dataReady and (lastSent != speedVector): #no obstruction and the new command is different to the last command
                 logging.debug("Data Ready")
                 try:
                     if not safetyOn:
@@ -763,7 +779,7 @@ class motorDataThread(MultiThreadBase):
                 pulsesQueue.task_done()
                 #logging.info("data from motor read")
 
-            if self.debug:
+            if self.profiling:
                 time.sleep(0.1)
                 # self.read_serial_data()
             else:
@@ -778,7 +794,7 @@ class motorDataThread(MultiThreadBase):
         global lastSent
         logging.info("Sending Speed Vector - %s", str(sendCommand))
 
-        if self.hexData:
+        if self.hexData: #construct the command to be sent.
             sendData = "$"
             if sendCommand[0] >= 0:
                 sendData += "+"
@@ -835,7 +851,7 @@ class usDataThread(MultiThreadBase):
         self.rawUSdata = [0., 0., 0., 0., 0., 0.]
         self.inputBuf = ""
         self.errorCount = 0
-        self.debug = False
+        self.profiling = False
 
     def run(self):
         global speedVector
@@ -867,7 +883,7 @@ class usDataThread(MultiThreadBase):
 
             self.US_safety_interrupt()
 
-            if self.debug:
+            if self.profiling:
                 time.sleep(0.1)
                 # self.loopEndFlag()
                 # self.loopRunTime()
@@ -895,7 +911,7 @@ class usDataThread(MultiThreadBase):
             with threadLock:
                 for i in range(0, len(USAvgDistances)):
                     USAvgDistances[i] += (int(self.rawUSdata[i]) - USAvgDistances[i]) / n
-                if self.debug:
+                if self.profiling:
                     print ("\t" + self.name + " Avg Vector - " + str(USAvgDistances))
 
     def US_safety_interrupt(self):
@@ -908,13 +924,13 @@ class usDataThread(MultiThreadBase):
         # if safetyOn:
         try:
             if lastCommand == "f":
-                if (int(USAvgDistances[0]) < USThresholds[0]):  # or (int(USAvgDistances[1]) < USThresholds[1]) or (int(USAvgDistances[2]) < USThresholds[1]):
+                if (int(USAvgDistances[0]) < USThresholds[0]):
                     logging.warning("FRONT TOO CLOSE. STOPPPPP!!!")
                     if obstruction != True:
                         with threadLock:
                             obstruction = True
-                    print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[0]))
-                           + ", " + str(int(USAvgDistances[1])) + ", " + str(int(USAvgDistances[0])))
+                    print ("\t" + self.name + " Avg Vector - " + str(int(USAvgDistances[1]))
+                           + ", " + str(int(USAvgDistances[0])) + ", " + str(int(USAvgDistances[2])))
                 elif obstruction != False:
                     with threadLock:
                         obstruction = False
@@ -931,7 +947,7 @@ class usDataThread(MultiThreadBase):
                         obstruction = False
 
             elif lastCommand == "l":
-                if int(USAvgDistances[3]) < USThresholds[2]:
+                if int(USAvgDistances[3]) < USThresholds[1]:
                     logging.warning("LEFT SIDE TOO CLOSE. STOPPPPP!!!")
                     if obstruction != True:
                         with threadLock:
@@ -942,7 +958,7 @@ class usDataThread(MultiThreadBase):
                         obstruction = False
 
             elif lastCommand == "r":
-                if int(USAvgDistances[4]) < USThresholds[2]:
+                if int(USAvgDistances[4]) < USThresholds[1]:
                     logging.warning("RIGHT SIDE TOO CLOSE. STOPPPPP!!!")
                     if obstruction != True:
                         with threadLock:
@@ -956,14 +972,17 @@ class usDataThread(MultiThreadBase):
             logging.error("%s", str(e))
 
 
-class ttsThread(MultiThreadBase):
+class ttsThread(MultiThreadBase): #text to speech thread
     def run(self):
         global speech
 
+        #initialise speech engine
         engine = pyttsx.init()
         rate = engine.getProperty('rate')
         engine.setProperty('rate', rate - 50)
+
         while not exitFlag:
+            #talk while there are things to be said
             if not speechQueue.empty():
                 engine.say(speechQueue.get())
                 engine.runAndWait()
@@ -978,7 +997,7 @@ class cameraThread(MultiThreadBase):  # QR codes and other camera related stuff 
 
 ###---Function Definitions
 
-def IMU_Init():
+def IMU_Init(): #initialise IMU
     global imu
     global imuEnable
 
@@ -988,7 +1007,7 @@ def IMU_Init():
         logging.error("IMU Init Failed")
         # speechQueue.put("IMU Initiation Failed")
         imuEnable = False
-    else:
+    else: #if connection successful...
         logging.info("IMU Init Succeeded")
         # speechQueue.put("IMU Successfully Initiated")
         imu.setSlerpPower(0.02)
@@ -1025,7 +1044,7 @@ def getSafeDist(speed):
     pass
 
 
-def cmdToSpeeds(inputCommand):
+def cmdToSpeeds(inputCommand): #convert commands to speed vectors for manual control
     mSpeed = 0
     validateBuffer = (0, 0)
     LMax = 100
@@ -1092,38 +1111,35 @@ def get_ip_address(ifname):
 
 logging.info("Starting system...")
 sysRunning = True
-logging.info("checking if this works")
 
-# speech ="Starting up"
+IMU_Init() #initialise IMU
 
-IMU_Init()
-
+#Start IMU data thread
 logging.info("Starting IMU Thread")
 imuThread = IMUDataThread(1, "IMU Thread")
 imuThread.start()
-threads.append(imuThread)
+threads.append(imuThread) #add thread to the thread queue. This MUST be done for every queue
 
+#Start Speech thread
 logging.info("Starting speech Thread...")
 speechThread = ttsThread(2, "Speech Thread")
 speechThread.start()
 threads.append(speechThread)
-#speechQueue.put("Initialising control threads")
 
+#Start Autopilot thread
 logging.info("Starting Autopilot Thread")
-# speechQueue.put("Turning On Autopilot")
 autoPilotThread = autoPilotThread(3, "Auto Pilot Thread")
 autoPilotThread.start()
 threads.append(autoPilotThread)
 
 # setup serial connection to motor controller
 logging.info("Trying to connect to serial devices")
-
-# Setup serial conn to motor controller
 dataInput = raw_input("Connect to motor Controller... ? (y/n)")
-if dataInput == "y":
-    dataInput = ""
+
+if dataInput == "y": #if user wants to connect to the motor controller...
+    dataInput = "" #Reset the variable
     logging.info("Trying to connect to motor controller")
-    try:
+    try: #try to connect
         if (platform == "linux") or (platform == "linux2"):
             MotorConn = serial.Serial('/dev/ttyACM0', 19200)
         elif (platform == "win32"):
@@ -1133,8 +1149,7 @@ if dataInput == "y":
         serialThread = motorDataThread(4, "Motor thread")
         serialThread.start()
         threads.append(serialThread)
-        # speechQueue.put("Motor Controller Connected")
-    except Exception as e:
+    except Exception as e: #if something goes wrong... tell the user
         logging.error("Unable to establish serial comms to port /dev/ttyACM0")
         logging.error("%s", str(e))
 
@@ -1159,6 +1174,7 @@ if dataInput == "y":
         logging.error("%s", str(e))
         # USConnected = False
 
+#try to run Debug server if the user wants it
 dataInput = raw_input("Start Debug server... ? (y/n)")
 if dataInput == "y":
     try:
@@ -1202,11 +1218,10 @@ else:
     logging.debug("Local Control mode")
 
 # Main Control Loop
-while sysRunning:
+while sysRunning: #while the main loop is not in shutdown mode...
     logging.debug("System is running")
-    if not localCtrl:
+    if not localCtrl: #if remote control, wait for client to connect.
         # for each connection received create a tunnel to the client
-        # print ("ready for a new client to connect...")
         logging.info("Ready for a new client to connect...")
         clientConnection, address = s.accept()
         logging.info('Connected by %s', address)
@@ -1228,17 +1243,17 @@ while sysRunning:
         else:
             dataInput = raw_input("Please Enter Commands on local terminal...\n")
 
-        if dataInput == "e":
+        if dataInput == "e": #shutdown command server
             cmdExpecting = False
             break
-        elif dataInput == "q":
+        elif dataInput == "q": #initiate system shutdown
             cmdExpecting = False
             sysRunning = False
         else:
             logging.info("Input Command = %s", dataInput)
-            if len(dataInput) > 0:
+            if len(dataInput) > 0: #if more than one character read...
                 if (dataInput[0] == "f" or dataInput[0] == "b" or dataInput[0] == "r" \
-                            or dataInput[0] == "l" or dataInput[0] == "x" or dataInput[0] == "m") and not autoPilot:
+                            or dataInput[0] == "l" or dataInput[0] == "x" or dataInput[0] == "m") and not autoPilot: #simple commands
                     logging.info("Valid Command")
 
                     with threadLock:
@@ -1246,26 +1261,27 @@ while sysRunning:
                         # commandToTrans()
                         speedVector = cmdToSpeeds(dataInput)
                         dataReady = True
+
                     if lastCommand == "m":
                         logging.info("MANUAL OVERRIDE!\n")
 
-                elif dataInput[0] == "s" and not autoPilot:
+                elif dataInput[0] == "s" and not autoPilot: #Toggle safety
                     if safetyOn:
                         dataInput = raw_input("Do you solemnly swear you're up to no good!?..")
                         if dataInput[0] == "Y":
                             print ("May the force be with you... you are going to need it...")
                             print ("(just don't tell Ms Webster about it... >,< )")
                             safetyOn = False
-                    else:
+                    else:#if safety is off...turn it on
                         safetyOn = True
                         print ("Mischief managed ;)")
+
                     dataInput = ""
                     if dataReady != False:
                         with threadLock:
                             dataReady = False
 
-                elif dataInput[0] == "a":
-                    # Engage/Disengage Auto Pilot
+                elif dataInput[0] == "a": # Engage/Disengage Auto Pilot
                     if autoPilot:
                         logging.info("Turning OFF Autopilot")
                         speechQueue.put("Turning Off Autopilot")
@@ -1302,11 +1318,13 @@ while sysRunning:
         clientConnection.close()
         logging.info("Client at %s closed the connection", str(address))
 
-    else:
+    else: #
         print ("Use q to shutdown system... ")
         print ("Looping back to the start...")
 
-exitFlag = 1
+
+exitFlag = True #instruct all the threads to close
+
 if not localCtrl:
     logging.info("Shutting down the server at %s...", HOST)
     s.close()
@@ -1314,7 +1332,6 @@ else:
     logging.info("Shutting Down")
 
 logging.info("Waiting for threads to close...")
-
 for t in threads:
     logging.info("Closing %s thread", t)
     t.join()
