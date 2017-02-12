@@ -19,6 +19,7 @@ import numpy
 import random
 import pyttsx
 import math
+import multiprocessing
 
 from sys import platform
 #if on linux, import functions for IMU and ip
@@ -142,6 +143,9 @@ dataInput = "" #Data string from the user (SSH/TCP)
 
 ###---Class Definitions
 # create a class for the data to be sent over ait
+class MutliProcessingBase(multiprocessing.Process):
+    def __init__(self):
+        pass
 
 class MultiThreadBase(threading.Thread): #Parent class for threading
     def __init__(self, threadID, name): #Class constructor
@@ -972,17 +976,22 @@ class usDataThread(MultiThreadBase):
             logging.error("%s", str(e))
 
 
-class ttsThread(MultiThreadBase): #text to speech thread
-    def run(self):
-        global speech
+class ttsProcess(multiprocessing.Process): #text to speech thread
+    def __init__(self,name):
+        self.name = name
 
-        #initialise speech engine
+    def run(self):
+        self.target = self.talk()
+
+    def talk(self):
+        global speech
+        # initialise speech engine
         engine = pyttsx.init()
         rate = engine.getProperty('rate')
         engine.setProperty('rate', rate - 50)
 
         while not exitFlag:
-            #talk while there are things to be said
+            # talk while there are things to be said
             if not speechQueue.empty():
                 engine.say(speechQueue.get())
                 engine.runAndWait()
@@ -990,8 +999,7 @@ class ttsThread(MultiThreadBase): #text to speech thread
             else:
                 time.sleep(0.5)
 
-
-class cameraThread(MultiThreadBase):  # QR codes and other camera related stuff if doing optical SLAM use a different thread
+class cameraThread():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
 
 
@@ -1122,9 +1130,9 @@ threads.append(imuThread) #add thread to the thread queue. This MUST be done for
 
 #Start Speech thread
 logging.info("Starting speech Thread...")
-speechThread = ttsThread(2, "Speech Thread")
-speechThread.start()
-threads.append(speechThread)
+speechProcess = ttsProcess("Speech Process")
+#speechProcess.run()
+#threads.append(speechProcess)
 
 #Start Autopilot thread
 logging.info("Starting Autopilot Thread")
