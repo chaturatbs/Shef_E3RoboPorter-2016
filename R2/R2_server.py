@@ -72,7 +72,7 @@ USAvgDistances = [0., 0., 0., 0., 0., 0.]
 obstruction = False
 USThresholds = [50, 30, 30] #threasholds for treating objects as obstacles [front,side,back]
 
-##--Multi-Threading
+##--Multi-Threading/Muti-processing
 global threadLock #lock to be used when changing global variables
 global queueLock #
 global debugQueue #
@@ -82,10 +82,12 @@ global pulsesQueue #Queue holding the measured wheel encoder pulses
 threadLock = threading.Lock()
 queueLock = threading.Lock()
 debugQueue = Queue.Queue(10)
-speechQueue = Queue.Queue(10)
+speechQueue = multiprocessing.Queue(10)
 pulsesQueue = Queue.Queue(10)
 
 threads = [] #Array holding information on the currently running threads
+processes = [] #Array holding information on the currently running Processes
+
 
 # -QR Codes
 global QRdetected #Boolean for the QRcode detection status
@@ -93,6 +95,11 @@ global QRdata #String read from the QR code
 
 QRdetected = False
 QRdata = ""
+
+
+# -Camera Functions
+
+
 
 # -IMU data
 global imu #Handle for the IMU
@@ -140,12 +147,10 @@ cmdExpecting = False #
 exitFlag = False #set exitFlag = True initiate system shutdown
 dataInput = "" #Data string from the user (SSH/TCP)
 
+pExitFlag = multiprocessing.Value('b', False)
 
 ###---Class Definitions
 # create a class for the data to be sent over ait
-class MutliProcessingBase(multiprocessing.Process):
-    def __init__(self):
-        pass
 
 class MultiThreadBase(threading.Thread): #Parent class for threading
     def __init__(self, threadID, name): #Class constructor
@@ -976,28 +981,49 @@ class usDataThread(MultiThreadBase):
             logging.error("%s", str(e))
 
 
-class ttsProcess(multiprocessing.Process): #text to speech thread
-    def __init__(self,name):
-        self.name = name
 
-    def run(self):
-        self.target = self.talk()
+def porterSpeech(speechQueue,pExitFlag):
+    # initialise speech engine
+    engine = pyttsx.init()
+    rate = engine.getProperty('rate')
+    engine.setProperty('rate', rate - 50)
 
-    def talk(self):
-        global speech
-        # initialise speech engine
-        engine = pyttsx.init()
-        rate = engine.getProperty('rate')
-        engine.setProperty('rate', rate - 50)
+    while not pExitFlag.value:
+        # talk while there are things to be said
+        if not speechQueue.empty():
+            engine.say(speechQueue.get())
+            engine.runAndWait()
+            #speechQueue.task_done()
+        else:
+            time.sleep(0.5)
 
-        while not exitFlag:
-            # talk while there are things to be said
-            if not speechQueue.empty():
-                engine.say(speechQueue.get())
-                engine.runAndWait()
-                speechQueue.task_done()
-            else:
-                time.sleep(0.5)
+    engine.say("Shutting down")
+    engine.runAndWait()
+
+#
+# class ttsProcess(multiprocessing.Process): #text to speech thread
+#     def __init__(self,name):
+#         self.name = name
+#
+#     def run(self):
+#         self.target = self.talk()
+#
+#     def talk(self):
+#         global speech
+#         # initialise speech engine
+#         engine = pyttsx.init()
+#         rate = engine.getProperty('rate')
+#         engine.setProperty('rate', rate - 50)
+#
+#         while not exitFlag:
+#             # talk while there are things to be said
+#             if not speechQueue.empty():
+#                 engine.say(speechQueue.get())
+#                 engine.runAndWait()
+#                 #speechQueue.task_done()
+#             else:
+#                 time.sleep(0.5)
+#
 
 class cameraThread():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
@@ -1117,233 +1143,250 @@ def get_ip_address(ifname):
 ######################################################
 ######Start of the Main Thread!
 
-logging.info("Starting system...")
-sysRunning = True
+if __name__ == '__main__':
 
-IMU_Init() #initialise IMU
+    logging.info("Starting system...")
+    sysRunning = True
 
-#Start IMU data thread
-logging.info("Starting IMU Thread")
-imuThread = IMUDataThread(1, "IMU Thread")
-imuThread.start()
-threads.append(imuThread) #add thread to the thread queue. This MUST be done for every queue
+    #IMU_Init() #initialise IMU
 
-#Start Speech thread
-logging.info("Starting speech Thread...")
-speechProcess = ttsProcess("Speech Process")
-#speechProcess.run()
-#threads.append(speechProcess)
+    #Start IMU data thread
+    logging.info("Starting IMU Thread")
+    #imuThread = IMUDataThread(1, "IMU Thread")
+    #imuThread.start()
+    #threads.append(imuThread) #add thread to the thread queue. This MUST be done for every queue
 
-#Start Autopilot thread
-logging.info("Starting Autopilot Thread")
-autoPilotThread = autoPilotThread(3, "Auto Pilot Thread")
-autoPilotThread.start()
-threads.append(autoPilotThread)
+    #Start Speech thread
+    logging.info("Starting speech Process...")
 
-# setup serial connection to motor controller
-logging.info("Trying to connect to serial devices")
-dataInput = raw_input("Connect to motor Controller... ? (y/n)")
+    speechProcess = multiprocessing.Process(target=porterSpeech,name="Speech Process",args=(speechQueue,pExitFlag,))#ttsProcess("Speech Process")
+    speechProcess.start()
+    processes.append(speechProcess)
+    #speechProcess.run()
+    #threads.append(speechProcess)
 
-if dataInput == "y": #if user wants to connect to the motor controller...
-    dataInput = "" #Reset the variable
-    logging.info("Trying to connect to motor controller")
-    try: #try to connect
-        if (platform == "linux") or (platform == "linux2"):
-            MotorConn = serial.Serial('/dev/ttyACM0', 19200)
-        elif (platform == "win32"):
-            MotorConn = serial.Serial('COM7', 19200)
+    speechQueue.put("good morning!")
 
-        logging.info('Connected to Motors %s', str(MotorConn))
-        serialThread = motorDataThread(4, "Motor thread")
-        serialThread.start()
-        threads.append(serialThread)
-    except Exception as e: #if something goes wrong... tell the user
-        logging.error("Unable to establish serial comms to port /dev/ttyACM0")
-        logging.error("%s", str(e))
+    pDataManager = multiprocessing.Manager()
+    qrDic = pDataManager.dict
+    vpDict = pDataManager.dict()
 
-# Setup serial conn to US controller
-dataInput = raw_input("Connect Ultrasonic Controller... ? (y/n)")
-if dataInput == "y":
-    dataInput = ""
-    logging.info("Trying to connect to Ultrasonic controller")
-    try:
-        if (platform == "linux") or (platform == "linux2"):
-            USConn = serial.Serial('/dev/ttyACM1', 19200)
-        elif (platform == "win32"):
-            USConn = serial.Serial('COM3', 19200)
+    #Start Autopilot thread
+    logging.info("Starting Autopilot Thread")
+    autoPilotThread = autoPilotThread(3, "Auto Pilot Thread")
+    autoPilotThread.start()
+    threads.append(autoPilotThread)
 
-        logging.info("Connected to Ultrasonic sensors at %s", str(USConn))
-        USthread = usDataThread(5, "Ultrasonic thread")
-        USthread.start()
-        threads.append(USthread)
-        # speechQueue.put("Ultrasonic Sensors Connected")
-    except Exception as e:
-        print ('Unable to establish serial comms to port /dev/ttyACM1')
-        logging.error("%s", str(e))
-        # USConnected = False
+    # setup serial connection to motor controller
+    logging.info("Trying to connect to serial devices")
+    dataInput = raw_input("Connect to motor Controller... ? (y/n)")
 
-#try to run Debug server if the user wants it
-dataInput = raw_input("Start Debug server... ? (y/n)")
-if dataInput == "y":
-    try:
-        debugChannel = debugThread(6, "Debug Thread")
-        debugChannel.start()
-        threads.append(debugChannel)
-        logging.info("Running Debug Server")
-        # speechQueue.put("Debug Server Running")
-    except Exception as e:
-        logging.error("%s", str(e))
+    if dataInput == "y": #if user wants to connect to the motor controller...
+        dataInput = "" #Reset the variable
+        logging.info("Trying to connect to motor controller")
+        try: #try to connect
+            if (platform == "linux") or (platform == "linux2"):
+                MotorConn = serial.Serial('/dev/ttyACM0', 19200)
+            elif (platform == "win32"):
+                MotorConn = serial.Serial('COM7', 19200)
 
-# speechQueue.put("Setup Complete")
+            logging.info('Connected to Motors %s', str(MotorConn))
+            serialThread = motorDataThread(4, "Motor thread")
+            serialThread.start()
+            threads.append(serialThread)
+        except Exception as e: #if something goes wrong... tell the user
+            logging.error("Unable to establish serial comms to port /dev/ttyACM0")
+            logging.error("%s", str(e))
 
-# chose input method
-dataInput = raw_input("Local Comms...? (y/n)")
-if dataInput == "n":
-    logging.debug("Trying to Setup Remote control")
-    localCtrl = False
-    # set the server address and port
-    logging.info("Setting up sockets...")
-    try:
-        HOST = get_ip_address('wlan0')  # socket.gethostbyname(socket.gethostname()) #socket.gethostname()
-        PORT = 5002
-
-        # create a socket to establish a server
-        logging.info("Binding the socket...")
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((HOST, PORT))
-
-        # listen to incoming connections on PORT
-        logging.info("Socket opened at %s listening to port %s", HOST, PORT)
-        s.listen(1)
-    except Exception as e:
-        # print ("EXCEPTION trying to open Socket - " +str(e))
-        logging.error("%s", str(e))
-    finally:
-        # print ("Local Control")
-        logging.debug("Local Control")
-        localCtrl = True
-else:
-    logging.debug("Local Control mode")
-
-# Main Control Loop
-while sysRunning: #while the main loop is not in shutdown mode...
-    logging.debug("System is running")
-    if not localCtrl: #if remote control, wait for client to connect.
-        # for each connection received create a tunnel to the client
-        logging.info("Ready for a new client to connect...")
-        clientConnection, address = s.accept()
-        logging.info('Connected by %s', address)
-        print 'Connected by', address
-
-        # send welcome message
-        print ("Sending welcome message...")
-        clientConnection.send('Connection ack')
-        dataInput = clientConnection.recv(1024)
-        print ("Client says - " + dataInput)
+    # Setup serial conn to US controller
+    dataInput = raw_input("Connect Ultrasonic Controller... ? (y/n)")
+    if dataInput == "y":
         dataInput = ""
+        logging.info("Trying to connect to Ultrasonic controller")
+        try:
+            if (platform == "linux") or (platform == "linux2"):
+                USConn = serial.Serial('/dev/ttyACM1', 19200)
+            elif (platform == "win32"):
+                USConn = serial.Serial('COM3', 19200)
 
-    cmdExpecting = True
+            logging.info("Connected to Ultrasonic sensors at %s", str(USConn))
+            USthread = usDataThread(5, "Ultrasonic thread")
+            USthread.start()
+            threads.append(USthread)
+            # speechQueue.put("Ultrasonic Sensors Connected")
+        except Exception as e:
+            print ('Unable to establish serial comms to port /dev/ttyACM1')
+            logging.error("%s", str(e))
+            # USConnected = False
 
-    while cmdExpecting:
-        print ("Motor commands are expecting...")
-        if not localCtrl:
+    #try to run Debug server if the user wants it
+    dataInput = raw_input("Start Debug server... ? (y/n)")
+    if dataInput == "y":
+        try:
+            debugChannel = debugThread(6, "Debug Thread")
+            debugChannel.start()
+            threads.append(debugChannel)
+            logging.info("Running Debug Server")
+            # speechQueue.put("Debug Server Running")
+        except Exception as e:
+            logging.error("%s", str(e))
+
+    # speechQueue.put("Setup Complete")
+
+    # chose input method
+    dataInput = raw_input("Local Comms...? (y/n)")
+    if dataInput == "n":
+        logging.debug("Trying to Setup Remote control")
+        localCtrl = False
+        # set the server address and port
+        logging.info("Setting up sockets...")
+        try:
+            HOST = get_ip_address('wlan0')  # socket.gethostbyname(socket.gethostname()) #socket.gethostname()
+            PORT = 5002
+
+            # create a socket to establish a server
+            logging.info("Binding the socket...")
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.bind((HOST, PORT))
+
+            # listen to incoming connections on PORT
+            logging.info("Socket opened at %s listening to port %s", HOST, PORT)
+            s.listen(1)
+        except Exception as e:
+            # print ("EXCEPTION trying to open Socket - " +str(e))
+            logging.error("%s", str(e))
+        finally:
+            # print ("Local Control")
+            logging.debug("Local Control")
+            localCtrl = True
+    else:
+        logging.debug("Local Control mode")
+
+    # Main Control Loop
+    while sysRunning: #while the main loop is not in shutdown mode...
+        logging.debug("System is running")
+        if not localCtrl: #if remote control, wait for client to connect.
+            # for each connection received create a tunnel to the client
+            logging.info("Ready for a new client to connect...")
+            clientConnection, address = s.accept()
+            logging.info('Connected by %s', address)
+            print 'Connected by', address
+
+            # send welcome message
+            print ("Sending welcome message...")
+            clientConnection.send('Connection ack')
             dataInput = clientConnection.recv(1024)
-        else:
-            dataInput = raw_input("Please Enter Commands on local terminal...\n")
+            print ("Client says - " + dataInput)
+            dataInput = ""
 
-        if dataInput == "e": #shutdown command server
-            cmdExpecting = False
-            break
-        elif dataInput == "q": #initiate system shutdown
-            cmdExpecting = False
-            sysRunning = False
-        else:
-            logging.info("Input Command = %s", dataInput)
-            if len(dataInput) > 0: #if more than one character read...
-                if (dataInput[0] == "f" or dataInput[0] == "b" or dataInput[0] == "r" \
-                            or dataInput[0] == "l" or dataInput[0] == "x" or dataInput[0] == "m") and not autoPilot: #simple commands
-                    logging.info("Valid Command")
+        cmdExpecting = True
 
-                    with threadLock:
-                        lastCommand = dataInput[0]
-                        # commandToTrans()
-                        speedVector = cmdToSpeeds(dataInput)
-                        dataReady = True
+        while cmdExpecting:
+            print ("Motor commands are expecting...")
+            if not localCtrl:
+                dataInput = clientConnection.recv(1024)
+            else:
+                dataInput = raw_input("Please Enter Commands on local terminal...\n")
 
-                    if lastCommand == "m":
-                        logging.info("MANUAL OVERRIDE!\n")
+            if dataInput == "e": #shutdown command server
+                cmdExpecting = False
+                break
+            elif dataInput == "q": #initiate system shutdown
+                cmdExpecting = False
+                sysRunning = False
+            else:
+                logging.info("Input Command = %s", dataInput)
+                if len(dataInput) > 0: #if more than one character read...
+                    if (dataInput[0] == "f" or dataInput[0] == "b" or dataInput[0] == "r" \
+                                or dataInput[0] == "l" or dataInput[0] == "x" or dataInput[0] == "m") and not autoPilot: #simple commands
+                        logging.info("Valid Command")
 
-                elif dataInput[0] == "s" and not autoPilot: #Toggle safety
-                    if safetyOn:
-                        dataInput = raw_input("Do you solemnly swear you're up to no good!?..")
-                        if dataInput[0] == "Y":
-                            print ("May the force be with you... you are going to need it...")
-                            print ("(just don't tell Ms Webster about it... >,< )")
-                            safetyOn = False
-                    else:#if safety is off...turn it on
-                        safetyOn = True
-                        print ("Mischief managed ;)")
-
-                    dataInput = ""
-                    if dataReady != False:
                         with threadLock:
-                            dataReady = False
-
-                elif dataInput[0] == "a": # Engage/Disengage Auto Pilot
-                    if autoPilot:
-                        logging.info("Turning OFF Autopilot")
-                        speechQueue.put("Turning Off Autopilot")
-                        autoPilot = False
-                        with threadLock:
-                            lastCommand = "x"
+                            lastCommand = dataInput[0]
                             # commandToTrans()
-                            speedVector = cmdToSpeeds("x")
+                            speedVector = cmdToSpeeds(dataInput)
                             dataReady = True
-                    else:
-                        logging.info("Turning ON Autopilot. Send letter 'a' for emergency stop")
-                        speechQueue.put("Turning On Autopilot")
-                        autoPilot = True
-                        safetyOn = True
+
+                        if lastCommand == "m":
+                            logging.info("MANUAL OVERRIDE!\n")
+
+                    elif dataInput[0] == "s" and not autoPilot: #Toggle safety
+                        if safetyOn:
+                            dataInput = raw_input("Do you solemnly swear you're up to no good!?..")
+                            if dataInput[0] == "Y":
+                                print ("May the force be with you... you are going to need it...")
+                                print ("(just don't tell Ms Webster about it... >,< )")
+                                safetyOn = False
+                        else:#if safety is off...turn it on
+                            safetyOn = True
+                            print ("Mischief managed ;)")
+
+                        dataInput = ""
                         if dataReady != False:
                             with threadLock:
                                 dataReady = False
 
-                elif dataInput[0] == "n" and autoPilot:
-                    # put the code for setting destination nodes here
-                    pass
+                    elif dataInput[0] == "a": # Engage/Disengage Auto Pilot
+                        if autoPilot:
+                            logging.info("Turning OFF Autopilot")
+                            speechQueue.put("Turning Off Autopilot")
+                            autoPilot = False
+                            with threadLock:
+                                lastCommand = "x"
+                                # commandToTrans()
+                                speedVector = cmdToSpeeds("x")
+                                dataReady = True
+                        else:
+                            logging.info("Turning ON Autopilot. Send letter 'a' for emergency stop")
+                            speechQueue.put("Turning On Autopilot")
+                            autoPilot = True
+                            safetyOn = True
+                            if dataReady != False:
+                                with threadLock:
+                                    dataReady = False
 
-                else:
-                    if dataReady != False:
-                        with threadLock:
-                            dataReady = False
-                    logging.info("Invalid Command")
+                    elif dataInput[0] == "n" and autoPilot:
+                        # put the code for setting destination nodes here
+                        pass
 
-        dataInput = ""
-        print ("")
+                    else:
+                        if dataReady != False:
+                            with threadLock:
+                                dataReady = False
+                        logging.info("Invalid Command")
 
-    if not localCtrl and clientConnection:
-        # shut down the server
-        clientConnection.close()
-        logging.info("Client at %s closed the connection", str(address))
+            dataInput = ""
+            print ("")
 
-    else: #
-        print ("Use q to shutdown system... ")
-        print ("Looping back to the start...")
+        if not localCtrl and clientConnection:
+            # shut down the server
+            clientConnection.close()
+            logging.info("Client at %s closed the connection", str(address))
+
+        else: #
+            print ("Use q to shutdown system... ")
+            print ("Looping back to the start...")
 
 
-exitFlag = True #instruct all the threads to close
+    exitFlag = True #instruct all the threads to close
+    pExitFlag.value = True
 
-if not localCtrl:
-    logging.info("Shutting down the server at %s...", HOST)
-    s.close()
-else:
-    logging.info("Shutting Down")
+    if not localCtrl:
+        logging.info("Shutting down the server at %s...", HOST)
+        s.close()
+    else:
+        logging.info("Shutting Down")
 
-logging.info("Waiting for threads to close...")
-for t in threads:
-    logging.info("Closing %s thread", t)
-    t.join()
+    logging.info("Waiting for threads to close...")
+    for t in threads:
+        logging.info("Closing %s thread", t)
+        t.join()
 
-logging.info("Exiting main Thread... BYEEEE")
+    #speechProcess.join()
+    for p in processes:
+        logging.info("Closing %s process", p)
+        p.join()
+
+    logging.info("Exiting main Thread... BYEEEE")
 
 #######END of Program
