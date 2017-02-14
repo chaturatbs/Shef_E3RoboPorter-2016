@@ -1,6 +1,5 @@
 import processing.serial.*;
 import org.gicentre.utils.stat.*;    // For chart classes.
-//import org.gicentre.utils.multisketch.*;
 import grafica.*;
 import java.util.Random;
 
@@ -8,8 +7,6 @@ public GPlot positionPlot;
 public GPlot targetPlot;
 GPointsArray posPoints = new GPointsArray(10);
 GPointsArray tgtPoints = new GPointsArray(10);
-
-//public Random r;
 
 Serial usPort;
 Serial mPort;
