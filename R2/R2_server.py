@@ -83,7 +83,7 @@ threadLock = threading.Lock()
 queueLock = threading.Lock()
 debugQueue = Queue.Queue(10)
 speechQueue = multiprocessing.Queue(10)
-pulsesQueue = Queue.Queue(10)
+pulsesQueue = Queue.Queue(120)
 
 threads = [] #Array holding information on the currently running threads
 processes = [] #Array holding information on the currently running Processes
@@ -149,6 +149,14 @@ dataInput = "" #Data string from the user (SSH/TCP)
 
 pExitFlag = multiprocessing.Value('b', False)
 
+#function to set exit flags
+def setExitFlag(status):
+    global exitFlag
+    global pExitFlag
+
+    exitFlag = status
+    pExitFlag = status
+
 ###---Class Definitions
 # create a class for the data to be sent over ait
 
@@ -184,6 +192,32 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
             logging.debug("Avg loop Runtime - %s", str(self.avgRuntime))
             self.avgCounter = 0
 
+def trackPorterData(imu,globalIMUData,globalIMUFusion,pulsesQueue):
+    logging.info("Trying to read IMU")
+    logging.info("IMU is %s", str(imu))
+
+    if imu.IMUInit():  # if the IMU is initiated...
+        logging.info("IMU init successful")  # ...say so on the log
+    else:
+        logging.info("IMU init failed :/")  # ...or otherwise
+
+    while not exitFlag:  # while the system isn't in shutdown mode
+        if imu.IMURead():  # if data is available from the IMU...
+            logging.debug("Reading IMU")
+            globalIMUData = imu.getIMUData()  # read the IMU data into the global variable
+            globalIMUFusion = globalIMUData["fusionPose"]  # extract AHRS fusion info
+            time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)  # delay to sync with the recomended poll rate of the IMU
+
+            # if not pulsesQueue.empty(): #if theres data on the pulse Queue...
+            #     self.pulseData = pulsesQueue.get() #...get data
+            # Convert to distance and do what needs to be done
+            #     pulsesQueue.task_done() #set task complete in the Queue. (othewise the system will no be able to shut down)
+
+            # NEED TO ADD SOME STUFF HERE TO TRANSLATE THE MOTION OF THE ROBOT BASED ON THE PULSE DATA
+            # if lastCommand == "f" :
+            #     pass
+            #     #self.moveLocation(int(self.pulseData[0][1:]), int(self.pulseData[1][1:]))
+
 
 class IMUDataThread(MultiThreadBase):
     def __init__(self, threadID, name):
@@ -196,6 +230,7 @@ class IMUDataThread(MultiThreadBase):
         global globalIMUData
         global globalIMUFusion
         global imu
+        global pulsesQueue
 
         #Log
         logging.info("Trying to read IMU")
@@ -213,16 +248,19 @@ class IMUDataThread(MultiThreadBase):
                 globalIMUFusion = globalIMUData["fusionPose"] #extract AHRS fusion info
                 time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0) #delay to sync with the recomended poll rate of the IMU
 
+                #porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # get Yaw Data
 
-            # if not pulsesQueue.empty(): #if theres data on the pulse Queue...
-            #     self.pulseData = pulsesQueue.get() #...get data
-                # Convert to distance and do what needs to be done
-            #     pulsesQueue.task_done() #set task complete in the Queue. (othewise the system will no be able to shut down)
-
+            #print (str(pulsesQueue.empty()))
+            if not pulsesQueue.empty(): #if theres data on the pulse Queue...
+                #logging.info("getting data")
+                self.pulseData = pulsesQueue.get() #...get data
+                #Convert to distance and do what needs to be done
+                #print(str(self.pulseData))
+                self.moveLocation(int("0x" + str(self.pulseData[0][1:]),16), int("0x" + str(self.pulseData[1][1:]),16))
+                pulsesQueue.task_done() #set task complete in the Queue. (othewise the system will no be able to shut down)
             #NEED TO ADD SOME STUFF HERE TO TRANSLATE THE MOTION OF THE ROBOT BASED ON THE PULSE DATA
-            # if lastCommand == "f" :
-            #     pass
-            #     #self.moveLocation(int(self.pulseData[0][1:]), int(self.pulseData[1][1:]))
+
+
 
     # ONLY INVOKE WHEN MOVING FORWARDS
     def moveLocation(self, lPulses, rPulses): #function for calculating the distance moved
@@ -230,6 +268,7 @@ class IMUDataThread(MultiThreadBase):
         # Need to check if this function is mathematically sound for all r, theta.
         global porterLocation_Global
         global wheelSpeeds
+        global porterOrientation
 
         timeInterval = 0.5 #sampling interval of the motor controller
         wheelRadius = 20
@@ -238,18 +277,21 @@ class IMUDataThread(MultiThreadBase):
         #find the wheel speeds
         wheelSpeeds[0] = ((lPulses / timeInterval) * 60) / pulsesPerRev
         wheelSpeeds[1] = ((rPulses / timeInterval) * 60) / pulsesPerRev
+        #print(str(wheelSpeeds))
 
         #find the distance moved
         lDist = (2 * numpy.pi * lPulses / pulsesPerRev) * wheelRadius
         rDist = (2 * numpy.pi * rPulses / pulsesPerRev) * wheelRadius
 
-
         r = (lDist + rDist) / 2  # take the average of the distances for now.
 
-        # r is the staight line distance traveled... so find x,y components
-        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - porterOrientation) #x component
-        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - porterOrientation) #y component
+        # # r is the staight line distance traveled... so find x,y components
+        #if lastCommand == "f":
 
+        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - globalIMUFusion[2]) #x component
+        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - globalIMUFusion[2]) #y component
+        print (porterLocation_Global)
+        print (globalIMUFusion[2])
 
 class autoPilotThread(MultiThreadBase):
     def __init__(self, threadID, name):
@@ -696,6 +738,7 @@ class motorDataThread(MultiThreadBase):
         global dataReady
         global USConn
         global obstruction
+        global pulsesQueue
 
         logging.info("Starting %s", self.name)
         while not exitFlag:
@@ -784,8 +827,8 @@ class motorDataThread(MultiThreadBase):
                 self.inputBuf = self.inputBuf.rstrip("\r\n")
                 self.pulses = self.inputBuf.split(",")
                 pulsesQueue.put(self.pulses)
-                pulsesQueue.get()
-                pulsesQueue.task_done()
+                #pulsesQueue.get()
+                #pulsesQueue.task_done()
                 #logging.info("data from motor read")
 
             if self.profiling:
@@ -981,7 +1024,6 @@ class usDataThread(MultiThreadBase):
             logging.error("%s", str(e))
 
 
-
 def porterSpeech(speechQueue,pExitFlag):
     # initialise speech engine
     engine = pyttsx.init()
@@ -1025,7 +1067,7 @@ def porterSpeech(speechQueue,pExitFlag):
 #                 time.sleep(0.5)
 #
 
-class cameraThread():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
+def cameraProcess():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
 
 
@@ -1148,13 +1190,13 @@ if __name__ == '__main__':
     logging.info("Starting system...")
     sysRunning = True
 
-    #IMU_Init() #initialise IMU
+    IMU_Init() #initialise IMU
 
     #Start IMU data thread
     logging.info("Starting IMU Thread")
-    #imuThread = IMUDataThread(1, "IMU Thread")
-    #imuThread.start()
-    #threads.append(imuThread) #add thread to the thread queue. This MUST be done for every queue
+    imuThread = IMUDataThread(1, "IMU Thread")
+    imuThread.start()
+    threads.append(imuThread) #add thread to the thread queue. This MUST be done for every queue
 
     #Start Speech thread
     logging.info("Starting speech Process...")
@@ -1162,14 +1204,17 @@ if __name__ == '__main__':
     speechProcess = multiprocessing.Process(target=porterSpeech,name="Speech Process",args=(speechQueue,pExitFlag,))#ttsProcess("Speech Process")
     speechProcess.start()
     processes.append(speechProcess)
+
+
     #speechProcess.run()
     #threads.append(speechProcess)
 
-    speechQueue.put("good morning!")
+    speechQueue.put("initialising")
 
     pDataManager = multiprocessing.Manager()
-    qrDic = pDataManager.dict
+    qrDic = pDataManager.dict()
     vpDict = pDataManager.dict()
+
 
     #Start Autopilot thread
     logging.info("Starting Autopilot Thread")

@@ -5,7 +5,8 @@ import logging
 import logging.handlers
 import SocketServer
 import struct
-
+import time
+import random
 
 # class LogRecordStreamHandler(SocketServer.StreamRequestHandler):
 #     """Handler for a streaming logging request.
@@ -92,9 +93,8 @@ from msvcrt import getch
 
 #define variables for speed/angle/direction
 
-
 #set the server address and port
-HOST = raw_input("Please enter the server address: ") #"192.168.137.242" #"192.168.137.154"  #input("Enter the server address to connect to (default port is 5002) - ") #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
+HOST = "192.168.20.53" #raw_input("Please enter the server address: ") #"192.168.137.242" #"192.168.137.154"  #input("Enter the server address to connect to (default port is 5002) - ") #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
 PORT = 5003
 
 #create a socket to connect to the server
