@@ -258,7 +258,6 @@ class IMUDataThread(MultiThreadBase):
                 #print(str(self.pulseData))
                 self.moveLocation(int("0x" + str(self.pulseData[0][1:]),16), int("0x" + str(self.pulseData[1][1:]),16))
                 pulsesQueue.task_done() #set task complete in the Queue. (othewise the system will no be able to shut down)
-            #NEED TO ADD SOME STUFF HERE TO TRANSLATE THE MOTION OF THE ROBOT BASED ON THE PULSE DATA
 
 
 
@@ -286,10 +285,14 @@ class IMUDataThread(MultiThreadBase):
         r = (lDist + rDist) / 2  # take the average of the distances for now.
 
         # # r is the staight line distance traveled... so find x,y components
-        #if lastCommand == "f":
+        if lastCommand == "f":
+            porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - globalIMUFusion[2]) #x component
+            porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - globalIMUFusion[2]) #y component
 
-        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - globalIMUFusion[2]) #x component
-        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - globalIMUFusion[2]) #y component
+        elif lastCommand == "b":
+            porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(90 - globalIMUFusion[2])  # x component
+            porterLocation_Global[1] = porterLocation_Global[1] - r * numpy.sin(90 - globalIMUFusion[2])  # y component
+
         print (porterLocation_Global)
         print (globalIMUFusion[2])
 
