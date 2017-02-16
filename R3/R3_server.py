@@ -8,7 +8,6 @@
 #
 
 ###---Imports-------------------
-
 import socket
 import serial
 import struct
@@ -39,7 +38,7 @@ logging.basicConfig(format='%(asctime)s - (%(threadName)s) %(levelname)s: %(mess
                     level=logging.INFO) #change the logging level here to change the display verbosity
 
 ###---Global Variables-------------
-
+mpManager = multiprocessing.Manager()
 
 ##--Motor Commands
 global lastCommand #holds the last command that was sent to the motor controllers
@@ -50,7 +49,7 @@ global wheelSpeeds #measured wheel speeds
 lastCommand = ""
 speedVector = [0, 0]
 lastSent = [0, 0]
-wheelSpeeds = [0, 0]
+wheelSpeeds = mpManager.list([0, 0])
 dataReady = False
 
 # global USConnected
@@ -75,20 +74,18 @@ USThresholds = [50, 30, 30] #threasholds for treating objects as obstacles [fron
 ##--Multi-Threading/Muti-processing
 global threadLock #lock to be used when changing global variables
 global queueLock #
-global debugQueue #
 global speechQueue #Queue holding sentences to be spoken
 global pulsesQueue #Queue holding the measured wheel encoder pulses
 
 threadLock = threading.Lock()
 queueLock = threading.Lock()
-debugQueue = Queue.Queue(10)
 speechQueue = multiprocessing.Queue(10)
-pulsesQueue = Queue.Queue(120)
+pulsesQueue = multiprocessing.Queue(120)
 
 threads = [] #Array holding information on the currently running threads
 processes = [] #Array holding information on the currently running Processes
 
-mpManager = multiprocessing.Manager()
+
 
 # -QR Codes
 global QRdetected #Boolean for the QRcode detection status
@@ -105,19 +102,14 @@ QRdata = ""
 # -IMU data
 global imu #Handle for the IMU
 global imuEnable #Boolean holding whether IMU is connected
-global globalIMUData #Data Read from the IMU
-global globalIMUFusion #AHRS information form the IMU (derived from globalIMUData )
+# global globalIMUData #Data Read from the IMU
+# global globalIMUFusion #AHRS information form the IMU (derived from globalIMUData )
 
 #imuEnable = False #IMU is not initialised
 
-globalIMUData = mpManager.dict()
-globalIMUFusion = mpManager.list()
+#globalIMUData = mpManager.dict()
+#globalIMUFusion = mpManager.list()
 imuEnable = multiprocessing.Value('b', False)
-
-if platform == "linux" or platform == "linux2": #if running on linux
-    IMUSettingsFile = RTIMU.Settings("RTIMULib") #load IMU caliberation file
-    imu = RTIMU.RTIMU(IMUSettingsFile) #initialise the IMU handle
-    imuEnable = True #IMU is initialised
 
 ##--Auto Pilot
 global autoPilot #Boolean for turning on/off autopilot
@@ -136,9 +128,9 @@ tMat = numpy.array([0, 0])
 theta = 0.0
 targetLocation = [0,0]
 
-porterLocation_Global = numpy.array([-1, -1]) #set location to "undefined"
-porterLocation_Local = numpy.array([0, 0])
-porterOrientation = 0.0  # from north heading (in degrees?)
+porterLocation_Global = mpManager.list([-1, -1]) #set location to "undefined"
+porterLocation_Local = mpManager.list([0, 0])
+porterOrientation = multiprocessing.Value('d',0.0)  # from north heading (in degrees?)
 distanceToGoal = 0
 
 # -Debug
@@ -159,7 +151,7 @@ def setExitFlag(status):
     global pExitFlag
 
     exitFlag = status
-    pExitFlag = status
+    pExitFlag.value = status
 
 ###---Class Definitions
 # create a class for the data to be sent over ait
@@ -199,43 +191,58 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
 
 ##----------IMU process
 
+def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue):
 
-def trackPorterData(imu,globalIMUData,porterLocation_Global, globalIMUFusion,pulsesQueue,porterOrientation,wheelSpeeds):
-    #global globalIMUData
-    #global globalIMUFusion
-    #global imu
-    #global pulsesQueue
+    if platform == "linux" or platform == "linux2":  # if running on linux
+        IMUSettingsFile = RTIMU.Settings("RTIMULib")  # load IMU caliberation file
+        imu = RTIMU.RTIMU(IMUSettingsFile)  # initialise the IMU handle
+        imuEnable.value = True  # IMU is initialised
+
+    logging.info("IMU Name: " + imu.IMUName())
+
+    if (not imu.IMUInit()):
+        logging.error("IMU Init Failed")
+        speechQueue.put("IMU Initiation Failed")
+        imuEnable.value = False
+    else:  # if connection successful...
+        logging.info("IMU Init Succeeded")
+        speechQueue.put("IMU Successfully Initiated")
+        imu.setSlerpPower(0.02)
+        imu.setGyroEnable(True)
+        imu.setAccelEnable(True)
+        imu.setCompassEnable(True)
+        imuEnable.value = True
+        poll_interval = imu.IMUGetPollInterval()
+        logging.debug("Recommended Poll Interval: %dmS\n" % poll_interval)
+        logging.info("IMU is %s", str(imu))
 
     pulseData = ["",""] #pulses counted by the motor controller
-    # Log
-    logging.info("Trying to read IMU")
-    logging.info("IMU is %s", str(imu))
+    # # Log
+    # logging.info("Trying to read IMU")
+    # logging.info("IMU is %s", str(imu))
 
-    if imu.IMUInit():  # if the IMU is initiated...
-        logging.info("IMU init successful")  # ...say so on the log
-    else:
-        logging.info("IMU init failed :/")  # ...or otherwise
+    # if imu.IMUInit():  # if the IMU is initiated...
+    #     logging.info("IMU init successful")  # ...say so on the log
+    # else:
+    #     logging.info("IMU init failed :/")  # ...or otherwise
 
-    while not exitFlag:  # while the system isn't in shutdown mode
+    while not pExitFlag.value:  # while the system isn't in shutdown mode
         if imu.IMURead():  # if data is available from the IMU...
             logging.debug("Reading IMU")
             globalIMUData = imu.getIMUData()  # read the IMU data into the global variable
-            globalIMUFusion = globalIMUData["fusionPose"]  # extract AHRS fusion info
+            globalIMUFusion = globalIMUData["fusionPose"]  # extract AHRS fusion info NOTE
             time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)  # delay to sync with the recomended poll rate of the IMU
+            porterOrientation.value = globalIMUFusion[2]  # get Yaw Data
 
-            porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # get Yaw Data
-
-        # print (str(pulsesQueue.empty()))
         if not pulsesQueue.empty():  # if theres data on the pulse Queue...
-            # logging.info("getting data")
+            #logging.info("getting data")
             pulseData = pulsesQueue.get()  # ...get data
             # Convert to distance and do what needs to be done
             # print(str(self.pulseData))
             pulseData[0] = (pulseData[0][0]) + str(int("0x" + str(pulseData[0][1:]), 16))
             pulseData[1] = (pulseData[1][0]) + str(int("0x" + str(pulseData[1][1:]), 16))
 
-            porterLocation_Global, porterOrientation, wheelSpeeds = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds)
-
+            porterLocation_Global, wheelSpeeds = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds)
             pulsesQueue.task_done()  # set task complete in the Queue. (othewise the system will no be able to shut down)
 
 def movePorter(lPulses, rPulses, porterLocation_Global,porterOrientation,wheelSpeeds):  # function for calculating the distance moved
@@ -259,95 +266,18 @@ def movePorter(lPulses, rPulses, porterLocation_Global,porterOrientation,wheelSp
 
     # # r is the staight line distance traveled... so find x,y components
     if lastCommand == "f":
-        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - porterOrientation)  # x component
-        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - porterOrientation)  # y component
+        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(numpy.pi/2 - porterOrientation)  # x component
+        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(numpy.pi/2 - porterOrientation)  # y component
 
     elif lastCommand == "b":
-        porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(90 - porterOrientation)  # x component
-        porterLocation_Global[1] = porterLocation_Global[1] - r * numpy.sin(90 - porterOrientation)  # y component
+        porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(numpy.pi/2 - porterOrientation)  # x component
+        porterLocation_Global[1] = porterLocation_Global[1] - r * numpy.sin(numpy.pi/2 - porterOrientation)  # y component
 
     print (porterLocation_Global)
-    print (porterOrientation)
+    #print (porterOrientation)
 
-    return porterLocation_Global,porterOrientation,wheelSpeeds
+    return porterLocation_Global,wheelSpeeds
 
-#---------IMU process
-
-
-class IMUDataThread(MultiThreadBase):
-    def __init__(self, threadID, name):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-        self.pulseData = ["",""] #pulses counted by the motor controller
-
-    def run(self):
-        global globalIMUData
-        global globalIMUFusion
-        global imu
-        global pulsesQueue
-
-        #Log
-        logging.info("Trying to read IMU")
-        logging.info("IMU is %s", str(imu))
-
-        if imu.IMUInit(): #if the IMU is initiated...
-            logging.info("IMU init successful") #...say so on the log
-        else:
-            logging.info("IMU init failed :/") #...or otherwise
-
-        while not exitFlag: #while the system isn't in shutdown mode
-            if imu.IMURead(): #if data is available from the IMU...
-                logging.debug("Reading IMU")
-                globalIMUData = imu.getIMUData() #read the IMU data into the global variable
-                globalIMUFusion = globalIMUData["fusionPose"] #extract AHRS fusion info
-                time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0) #delay to sync with the recomended poll rate of the IMU
-                porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # get Yaw Data
-
-            #print (str(pulsesQueue.empty()))
-            if not pulsesQueue.empty(): #if theres data on the pulse Queue...
-                #logging.info("getting data")
-                self.pulseData = pulsesQueue.get() #...get data
-                #Convert to distance and do what needs to be done
-                print(str(self.pulseData))
-                self.moveLocation(int("0x" + str(self.pulseData[0][1:]),16), int("0x" + str(self.pulseData[1][1:]),16))
-                pulsesQueue.task_done() #set task complete in the Queue. (othewise the system will no be able to shut down)
-
-
-    # ONLY INVOKE WHEN MOVING FORWARDS
-    def moveLocation(self, lPulses, rPulses): #function for calculating the distance moved
-        # Assume that it doesnt "move" when rotating
-        # Need to check if this function is mathematically sound for all r, theta.
-        global porterLocation_Global
-        global wheelSpeeds
-        global porterOrientation
-
-        timeInterval = 0.5 #sampling interval of the motor controller
-        wheelRadius = 20
-        pulsesPerRev = 360
-
-        #find the wheel speeds
-        wheelSpeeds[0] = ((lPulses / timeInterval) * 60) / pulsesPerRev
-        wheelSpeeds[1] = ((rPulses / timeInterval) * 60) / pulsesPerRev
-        #print(str(wheelSpeeds))
-
-        #find the distance moved
-        lDist = (2 * numpy.pi * lPulses / pulsesPerRev) * wheelRadius
-        rDist = (2 * numpy.pi * rPulses / pulsesPerRev) * wheelRadius
-
-        r = (lDist + rDist) / 2  # take the average of the distances for now.
-
-        # # r is the staight line distance traveled... so find x,y components
-        # if lastCommand == "f":
-        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(90 - globalIMUFusion[2]) #x component
-        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(90 - globalIMUFusion[2]) #y component
-
-        if lastCommand == "b":
-            porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(90 - globalIMUFusion[2])  # x component
-            porterLocation_Global[1] = porterLocation_Global[1] - r * numpy.sin(90 - globalIMUFusion[2])  # y component
-
-        print (porterLocation_Global)
-        print (globalIMUFusion[2])
 
 class autoPilotThread(MultiThreadBase):
     def __init__(self, threadID, name):
@@ -382,13 +312,11 @@ class autoPilotThread(MultiThreadBase):
         global dataReady
         global speedVector
         global distanceToGoal
-        global porterOrientation
         global porterLocation_Global
         global porterLocation_Local
         global lastCommand
         global targetLocation
         global autoPilot
-        # global globalIMUFusion
 
         while not exitFlag: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
@@ -403,10 +331,10 @@ class autoPilotThread(MultiThreadBase):
                 logging.info("Looking for north")
                 speechQueue.put("Looking for north") #vocalise
                 time.sleep(1) #sleep for presentation purposes
-                porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # get Yaw Data
+                #porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # get Yaw Data
 
                 # Orienting to X-axis...
-                self.angleChange = 90 - porterOrientation #find required angle change
+                self.angleChange = 90 - numpy.rad2deg(porterOrientation) #find required angle change
                     # right if +ve left if -ve
                 if self.angleChange > 180: # if >180 turn left instead of right
                     self.angleChange -= 360
@@ -425,16 +353,11 @@ class autoPilotThread(MultiThreadBase):
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  #while not aligned
                         # Add boundaries
                     # keep calculating the angle change required
-                    porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
-                    self.angleChange = 90 - porterOrientation  # right if +ve left if -ve
+                    #porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
+                    self.angleChange = 90 - numpy.rad2deg(porterOrientation)  # right if +ve left if -ve
                     if self.angleChange > 180:
                         self.angleChange -= 360  # if >180 turn left instead of right
-                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
-                                     (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2]))) #for debugging purposes
                     time.sleep(0.01) #sleep a bit so that the CPU isnt overloaded
-
-                logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
-                             (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
 
                 # stop turning
                 with threadLock:
@@ -458,26 +381,24 @@ class autoPilotThread(MultiThreadBase):
 
                 self.angleToGoal = numpy.rad2deg(self.angleToGoal)
 
-                porterOrientation = numpy.rad2deg(globalIMUFusion[2])
-
                 # convert angle to 0,2pi
                 if self.dX >= 0:  # positive x
                     if self.dY >= 0:
-                        self.angleToGoal = porterOrientation - self.angleToGoal
+                        self.angleToGoal = numpy.rad2deg(porterOrientation) - self.angleToGoal
                     if self.dY < 0:  # negative y
-                        self.angleToGoal = porterOrientation - self.angleToGoal
+                        self.angleToGoal = numpy.rad2deg(porterOrientation) - self.angleToGoal
 
                 elif self.dX < 0:  # negative x
                     if self.dY >= 0:  # positive y
-                        self.angleToGoal = porterOrientation - (180 + self.angleToGoal)
+                        self.angleToGoal = numpy.rad2deg(porterOrientation) - (180 + self.angleToGoal)
                     if self.dY < 0:  # negative y
-                        self.angleToGoal = porterOrientation - (180 + self.angleToGoal)
+                        self.angleToGoal = numpy.rad2deg(porterOrientation) - (180 + self.angleToGoal)
 
                 # at this point angleToGoal is defined relative to north
                 # if this works remove redundant IF statements. Currently used only for debugging.
 
                 #same as before, finding the angle that needs to be changed
-                self.angleChange = self.angleToGoal - porterOrientation
+                self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation)
                 if self.angleChange < -180:
                     self.angleChange += 360
 
@@ -498,16 +419,12 @@ class autoPilotThread(MultiThreadBase):
                 # wait till its aligned
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
                     # keep checking the angle
-                    logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
-                                 (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
-                    porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
-                    self.angleChange = self.angleToGoal - porterOrientation
+                    self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation)
                     if self.angleChange < -180:
                         self.angleChange += 360
                     time.sleep(0.01)
 
-                logging.info("r: %f p: %f y: %f", (numpy.rad2deg(globalIMUFusion[0])),
-                             (numpy.rad2deg(globalIMUFusion[1])), (numpy.rad2deg(globalIMUFusion[2])))
+
                 # stop turning
                 with threadLock:
                     lastCommand = "x"
@@ -556,8 +473,8 @@ class autoPilotThread(MultiThreadBase):
 
     def checkdist(self, distScore):
 
-        directions = [porterOrientation, 180 - porterOrientation,
-                      90 - porterOrientation, 90 + porterOrientation]
+        directions = [numpy.rad2deg(porterOrientation), 180 - numpy.rad2deg(porterOrientation),
+                      90 - numpy.rad2deg(porterOrientation), 90 + numpy.rad2deg(porterOrientation)]
 
         for direction in directions:
             tempXpos = porterLocation_Global[0] + self.distQuantise * numpy.cos(90 - direction)
@@ -625,9 +542,6 @@ class debugThread(MultiThreadBase):
         self.debugServer = False
         self.debugClient = False
         self.dataStore = ""
-        # self.clientConnection = None
-        # self.SeverSocket
-        # self.clientAddress
 
     def run(self):
         logging.info("Starting %s", self.name)
@@ -669,10 +583,10 @@ class debugThread(MultiThreadBase):
                     self.clientConnection.send(str(porterLocation_Local[0]) + ",") #15
                     self.clientConnection.send(str(porterLocation_Local[1]) + ",")
                     #porterOrientation
-                    self.clientConnection.send(str(porterOrientation) + ",") #17
+                    self.clientConnection.send(str(porterOrientation.value) + ",") #17
                     # AHRS # FOR VALIDATION ONLY
                     # yaw
-                    self.clientConnection.send(str(globalIMUFusion[2]) + ",") #18
+                    self.clientConnection.send(str(porterOrientation.value) + ",") #18
 
 
                     # thread life status
@@ -689,12 +603,12 @@ class debugThread(MultiThreadBase):
                     self.clientConnection.send("\n")
 
                     # self.logOverNetwork()
-                    time.sleep(0.1)
+                    time.sleep(0.2)
+
                 except Exception as e:
                     logging.error("%s", str(e))
                     self.debugClient = False
                     # individual thread states
-
                     # Program log? for debuging?
 
     def waitForClient(self):
@@ -779,12 +693,6 @@ class motorDataThread(MultiThreadBase):
         self.lastRandomCode = "R"
         self.inputBuf = ""
         self.pulses = ["",""]
-        # self.dataReady = 0
-        # self.startTime = 0.
-        # self.endTime = 0.
-        # self.avgCounter = 0
-        # self.loopProfilingInterval = 10
-        # self.avgRuntime = 0
 
     def run(self):
         global speedVector
@@ -1095,58 +1003,12 @@ def porterSpeech(speechQueue,pExitFlag):
     engine.say("Shutting down")
     engine.runAndWait()
 
-#
-# class ttsProcess(multiprocessing.Process): #text to speech thread
-#     def __init__(self,name):
-#         self.name = name
-#
-#     def run(self):
-#         self.target = self.talk()
-#
-#     def talk(self):
-#         global speech
-#         # initialise speech engine
-#         engine = pyttsx.init()
-#         rate = engine.getProperty('rate')
-#         engine.setProperty('rate', rate - 50)
-#
-#         while not exitFlag:
-#             # talk while there are things to be said
-#             if not speechQueue.empty():
-#                 engine.say(speechQueue.get())
-#                 engine.runAndWait()
-#                 #speechQueue.task_done()
-#             else:
-#                 time.sleep(0.5)
-#
 
 def cameraProcess():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
 
 
 ###---Function Definitions
-
-def IMU_Init(): #initialise IMU
-    global imu
-    global imuEnable
-
-    logging.info("IMU Name: " + imu.IMUName())
-
-    if (not imu.IMUInit()):
-        logging.error("IMU Init Failed")
-        # speechQueue.put("IMU Initiation Failed")
-        imuEnable = False
-    else: #if connection successful...
-        logging.info("IMU Init Succeeded")
-        # speechQueue.put("IMU Successfully Initiated")
-        imu.setSlerpPower(0.02)
-        imu.setGyroEnable(True)
-        imu.setAccelEnable(True)
-        imu.setCompassEnable(True)
-        imuEnable = True
-        poll_interval = imu.IMUGetPollInterval()
-        logging.debug("Recommended Poll Interval: %dmS\n" % poll_interval)
-
 
 def simpTransform():
     pass
@@ -1242,32 +1104,21 @@ if __name__ == '__main__':
 
     logging.info("Starting system...")
     sysRunning = True
+    qrDic = mpManager.dict()
+    vpDict = mpManager.dict()
 
-    IMU_Init() #initialise IMU
-
-    #Start IMU data thread
-    logging.info("Starting IMU Thread")
-    imuThread = IMUDataThread(1, "IMU Thread")
-    imuThread.start()
-    threads.append(imuThread) #add thread to the thread queue. This MUST be done for every queue
-
-    #imuProcess = IMUDataProcess(name="IMU Process", args=())
-
-    #Start Speech thread
+    #Start Speech Process
     logging.info("Starting speech Process...")
-
     speechProcess = multiprocessing.Process(target=porterSpeech,name="Speech Process",args=(speechQueue,pExitFlag,))#ttsProcess("Speech Process")
     speechProcess.start()
     processes.append(speechProcess)
 
-    #speechProcess.run()
-    #threads.append(speechProcess)
-
     speechQueue.put("initialising")
-
-    pDataManager = multiprocessing.Manager()
-    qrDic = pDataManager.dict()
-    vpDict = pDataManager.dict()
+    #Start IMU data Process
+    logging.info("Starting Porter Tracker")
+    trackerProcess = multiprocessing.Process(name="IMU Process",target=porterTracker, args=(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue,))
+    trackerProcess.start()
+    processes.append(trackerProcess)
 
     #Start Autopilot thread
     logging.info("Starting Autopilot Thread")
