@@ -1,12 +1,11 @@
 #
-# Module name - R2_server
+# Module name - R3_server
 # Module Description -
 
 # Author     - C. Samarakoon
-# Created    - 26/01/2017
-# Modified   - 28/01/2017
+# Created    - 16/02/2017
+# Modified   - 16/02/2017
 #
-
 ###---Imports-------------------
 import socket
 import serial
@@ -73,19 +72,15 @@ USThresholds = [50, 30, 30] #threasholds for treating objects as obstacles [fron
 
 ##--Multi-Threading/Muti-processing
 global threadLock #lock to be used when changing global variables
-global queueLock #
 global speechQueue #Queue holding sentences to be spoken
 global pulsesQueue #Queue holding the measured wheel encoder pulses
 
 threadLock = threading.Lock()
-queueLock = threading.Lock()
-speechQueue = multiprocessing.Queue(10)
-pulsesQueue = multiprocessing.Queue(120)
+speechQueue = multiprocessing.Queue()
+pulsesQueue = multiprocessing.Queue()
 
 threads = [] #Array holding information on the currently running threads
 processes = [] #Array holding information on the currently running Processes
-
-
 
 # -QR Codes
 global QRdetected #Boolean for the QRcode detection status
@@ -98,17 +93,9 @@ QRdata = ""
 # -Camera Functions
 
 
-
 # -IMU data
-global imu #Handle for the IMU
+#global imu #Handle for the IMU
 global imuEnable #Boolean holding whether IMU is connected
-# global globalIMUData #Data Read from the IMU
-# global globalIMUFusion #AHRS information form the IMU (derived from globalIMUData )
-
-#imuEnable = False #IMU is not initialised
-
-#globalIMUData = mpManager.dict()
-#globalIMUFusion = mpManager.list()
 imuEnable = multiprocessing.Value('b', False)
 
 ##--Auto Pilot
@@ -116,25 +103,18 @@ global autoPilot #Boolean for turning on/off autopilot
 autoPilot = False #autopilot turned off
 
 # -Porter Localisation
-global tMat #
-global theta #
+
 global porterLocation_Global #vector holding global location [x,y] in cm
 global porterLocation_Local #vector holding local location [x,y] in cm
 global porterOrientation #angle from north (between -180,180) in degrees
-global targetLocation  #Target location in global coordinates in cm
+global targetDestination  #Target location in global coordinates in cm
 global distanceToGoal #Distance to goal in cm
 
-tMat = numpy.array([0, 0])
-theta = 0.0
-targetLocation = [0,0]
-
-porterLocation_Global = mpManager.list([-1, -1]) #set location to "undefined"
+targetDestination = [0,0]
+porterLocation_Global = mpManager.list([0, 0]) #set location to "undefined"
 porterLocation_Local = mpManager.list([0, 0])
 porterOrientation = multiprocessing.Value('d',0.0)  # from north heading (in degrees?)
 distanceToGoal = 0
-
-# -Debug
-debug = True #turns on verbose logging to SCREEN
 
 ##-System State Variables
 localCtrl = True #Local control = commands sent through SSH not TCP/IP
@@ -143,7 +123,7 @@ cmdExpecting = False #
 exitFlag = False #set exitFlag = True initiate system shutdown
 dataInput = "" #Data string from the user (SSH/TCP)
 
-pExitFlag = multiprocessing.Value('b', False)
+pExitFlag = multiprocessing.Value('b', False) #multiprocessing Exit flag (can be combined with the others)
 
 #function to set exit flags
 def setExitFlag(status):
@@ -191,10 +171,10 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
 
 ##----------IMU process
 
-def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue):
+def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue, speechQueue):
 
     if platform == "linux" or platform == "linux2":  # if running on linux
-        IMUSettingsFile = RTIMU.Settings("RTIMULib")  # load IMU caliberation file
+        IMUSettingsFile = RTIMU.Settings("mainIMUcal")  # load IMU caliberation file
         imu = RTIMU.RTIMU(IMUSettingsFile)  # initialise the IMU handle
         imuEnable.value = True  # IMU is initialised
 
@@ -217,14 +197,6 @@ def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation,
         logging.info("IMU is %s", str(imu))
 
     pulseData = ["",""] #pulses counted by the motor controller
-    # # Log
-    # logging.info("Trying to read IMU")
-    # logging.info("IMU is %s", str(imu))
-
-    # if imu.IMUInit():  # if the IMU is initiated...
-    #     logging.info("IMU init successful")  # ...say so on the log
-    # else:
-    #     logging.info("IMU init failed :/")  # ...or otherwise
 
     while not pExitFlag.value:  # while the system isn't in shutdown mode
         if imu.IMURead():  # if data is available from the IMU...
@@ -238,14 +210,18 @@ def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation,
             #logging.info("getting data")
             pulseData = pulsesQueue.get()  # ...get data
             # Convert to distance and do what needs to be done
-            # print(str(self.pulseData))
-            pulseData[0] = (pulseData[0][0]) + str(int("0x" + str(pulseData[0][1:]), 16))
-            pulseData[1] = (pulseData[1][0]) + str(int("0x" + str(pulseData[1][1:]), 16))
+            print(str(pulseData))
+            try:
+                pulseData[0] = int((pulseData[0][0]) + str(int("0x" + str(pulseData[0][1:]), 16)))
+                pulseData[1] = int((pulseData[1][0]) + str(int("0x" + str(pulseData[1][1:]), 16)))
 
-            porterLocation_Global, wheelSpeeds = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds)
-            pulsesQueue.task_done()  # set task complete in the Queue. (othewise the system will no be able to shut down)
+                porterLocation_Global, wheelSpeeds = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds)
+            except Exception as e:
+                logging.error("%s", str(e))
 
-def movePorter(lPulses, rPulses, porterLocation_Global,porterOrientation,wheelSpeeds):  # function for calculating the distance moved
+            #pulsesQueue.task_done()  # set task complete in the Queue. (othewise the system will no be able to shut down)
+
+def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelSpeeds):  # function for calculating the distance moved
     # Assume that it doesnt "move" when rotating
     # Need to check if this function is mathematically sound for all r, theta.
 
@@ -265,16 +241,17 @@ def movePorter(lPulses, rPulses, porterLocation_Global,porterOrientation,wheelSp
     r = (lDist + rDist) / 2  # take the average of the distances for now.
 
     # # r is the staight line distance traveled... so find x,y components
-    if lastCommand == "f":
-        porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(numpy.pi/2 - porterOrientation)  # x component
-        porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(numpy.pi/2 - porterOrientation)  # y component
+    #if lastCommand == "f":
 
-    elif lastCommand == "b":
-        porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(numpy.pi/2 - porterOrientation)  # x component
-        porterLocation_Global[1] = porterLocation_Global[1] - r * numpy.sin(numpy.pi/2 - porterOrientation)  # y component
+    porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
+    porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(numpy.pi/2 - porterOrientation.value)  # y component
+
+    # elif lastCommand == "b":
+    #     porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
+    #     porterLocation_Global[1] = porterLocation_Global[1] - r * numpy.sin(numpy.pi/2 - porterOrientation.value)  # y component
 
     print (porterLocation_Global)
-    #print (porterOrientation)
+    print (porterOrientation.value)
 
     return porterLocation_Global,wheelSpeeds
 
@@ -284,10 +261,7 @@ class autoPilotThread(MultiThreadBase):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        # self.globalPosition = [None,None]
-        # self.targetPosition = [0,0]
-        # self.localPosition = [0,0]
-        # self.angleFromNorth = 0
+
         self.angleToGoal = 0 #angle between the goal and the robot
         self.angleChange = 0 #angle change required
         self.alignmentThreshold = 5 #alignment error in degrees
@@ -303,9 +277,7 @@ class autoPilotThread(MultiThreadBase):
         self.momentumBonus = 0.5 #bonus for momentum conservation
         self.alpha = 1 #
         self.beta = 10
-
-        # tempX = 0
-        # tempY = 0
+        self.looping = False
 
     def run(self):
         global threadLock
@@ -315,46 +287,153 @@ class autoPilotThread(MultiThreadBase):
         global porterLocation_Global
         global porterLocation_Local
         global lastCommand
-        global targetLocation
+        global targetDestination
         global autoPilot
 
         while not exitFlag: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
                 time.sleep(1) #...sleep for a bit ...zzzzzzz
+            elif not imuEnable:
+                logging.warning("IMU not available. Can't turn on Autopilot... Soz...")
+                autoPilot = False
+            elif self.looping: #iterative mode
+                porterLocation_Global = porterLocation_Local  # for now assume local position is the same as global
+                # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
+                logging.info("Iteratve Autopilot mode")
+                speechQueue.put("Iteratve Autopilot mode")  # vocalise
+
+                speechQueue.put("Looking for the target destination")
+                logging.info("Looking for the target destination")
+
+                self.dX = targetDestination[0] - porterLocation_Global[0]
+                self.dY = targetDestination[1] - porterLocation_Global[1]
+
+                while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > 30:
+                # find the angle of the goal from north
+
+                    self.dX = targetDestination[0] - porterLocation_Global[0]
+                    self.dY = targetDestination[1] - porterLocation_Global[1]
+
+                    if self.dX != 0:
+                        self.angleToGoal = numpy.arctan(self.dY / self.dX)
+                    else:
+                        self.angleToGoal = numpy.pi / 2
+
+                    self.angleToGoal = numpy.rad2deg(self.angleToGoal)
+
+                    # convert angle to 0,2pi
+                    if self.dX >= 0:  # positive x
+                        if self.dY >= 0:
+                            self.angleToGoal = numpy.rad2deg(porterOrientation.value) - self.angleToGoal
+                        if self.dY < 0:  # negative y
+                            self.angleToGoal = numpy.rad2deg(porterOrientation.value) - self.angleToGoal
+
+                    elif self.dX < 0:  # negative x
+                        if self.dY >= 0:  # positive y
+                            self.angleToGoal = numpy.rad2deg(porterOrientation.value) - (180 + self.angleToGoal)
+                        if self.dY < 0:  # negative y
+                            self.angleToGoal = numpy.rad2deg(porterOrientation.value) - (180 + self.angleToGoal)
+
+                    # at this point angleToGoal is defined relative to north
+                    # if this works remove redundant IF statements. Currently used only for debugging.
+
+                    # same as before, finding the angle that needs to be changed
+                    self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
+                    if self.angleChange < -180:
+                        self.angleChange += 360
+
+                    if autoPilot and not exitFlag:
+                        with threadLock:
+                            if self.angleChange > self.alignmentThreshold:
+                                lastCommand = "r"
+                                speedVector = [self.autoSpeed, -self.autoSpeed]
+                                dataReady = True
+                            elif self.angleChange < self.alignmentThreshold:
+                                lastCommand = "l"
+                                speedVector = [-self.autoSpeed, self.autoSpeed]
+                                dataReady = True
+
+                    # wait till its aligned
+                    while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
+                        # keep checking the angle
+                        self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
+                        if self.angleChange < -180:
+                            self.angleChange += 360
+                        time.sleep(0.01)
+
+                    # stop turning
+                    with threadLock:
+                        lastCommand = "x"
+                        speedVector = [0, 0]
+                        dataReady = True
+                        # aligned to x axis
+                    speechQueue.put("Aligned to the target destination")
+                    logging.info("Aligned to the target destination")
+                    time.sleep(1)
+
+                    # find distance to Goal
+                    distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
+                    # move to destination
+                    speechQueue.put("Moving to the target")
+                    logging.info("Moving to Target")
+
+                    with threadLock:
+                        lastCommand = "f"
+                        speedVector = [self.autoSpeed, self.autoSpeed]
+                        dataReady = True
+
+                    initLoc = porterLocation_Global
+                    self.distTravelled = 0
+
+                    while (self.distTravelled < self.distQuantise) and autoPilot and not exitFlag: #change this to allow for looping the whole block from else till at goal.
+                        # self.dX = targetDestination[0] - porterLocation_Global[0]
+                        # self.dY = targetDestination[1] - porterLocation_Global[1]
+                        # distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
+                        self.dX = porterLocation_Global[0] - initLoc[0]
+                        self.dY = porterLocation_Global[1] - initLoc[1]
+                        self.distTravelled = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
+
+                    with threadLock:
+                        lastCommand = "x"
+                        speedVector = [0, 0]
+                        dataReady = True
+
+                    self.dX = targetDestination[0] - porterLocation_Global[0]
+                    self.dY = targetDestination[1] - porterLocation_Global[1]
+
+                speechQueue.put("Successfully arrived at the target")
+                logging.info("Successfully arrived at the target")
+                autoPilot = False  # turn off autopilot at the end of the maneuver
             else: #if in autopilot mode...
                 porterLocation_Global = porterLocation_Local # for now assume local position is the same as global
                     # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
-
-                targetLocation = [-100, 100] # go to global XY = -100,100
 
                 # find the required angle change to align to global grid
                 logging.info("Looking for north")
                 speechQueue.put("Looking for north") #vocalise
                 time.sleep(1) #sleep for presentation purposes
-                #porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # get Yaw Data
 
                 # Orienting to X-axis...
-                self.angleChange = 90 - numpy.rad2deg(porterOrientation) #find required angle change
+                self.angleChange = 90 - numpy.rad2deg(porterOrientation.value) #find required angle change
                     # right if +ve left if -ve
                 if self.angleChange > 180: # if >180 turn left instead of right
                     self.angleChange -= 360
 
-                with threadLock: #with exclusive global variable access...
-                    if self.angleChange > self.alignmentThreshold: #if need to turn right
-                        lastCommand = "r" #set the command to be right (for obstacle avoidance purposes)
-                        speedVector = [self.autoSpeed, -self.autoSpeed] #set the required speeds
-                        dataReady = True #this signals the motor control thread that there is data to be sent
-                    elif self.angleChange < self.alignmentThreshold: #if need to turn left
-                        lastCommand = "l"
-                        speedVector = [-self.autoSpeed, self.autoSpeed]
-                        dataReady = True
+                if autoPilot and not exitFlag:
+                    with threadLock: #with exclusive global variable access...
+                        if self.angleChange > self.alignmentThreshold: #if need to turn right
+                            lastCommand = "r" #set the command to be right (for obstacle avoidance purposes)
+                            speedVector = [self.autoSpeed, -self.autoSpeed] #set the required speeds
+                            dataReady = True #this signals the motor control thread that there is data to be sent
+                        elif self.angleChange < self.alignmentThreshold: #if need to turn left
+                            lastCommand = "l"
+                            speedVector = [-self.autoSpeed, self.autoSpeed]
+                            dataReady = True
 
                 # wait till its aligned
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  #while not aligned
-                        # Add boundaries
                     # keep calculating the angle change required
-                    #porterOrientation = numpy.rad2deg(globalIMUFusion[2])  # Yaw Data
-                    self.angleChange = 90 - numpy.rad2deg(porterOrientation)  # right if +ve left if -ve
+                    self.angleChange = 90 - numpy.rad2deg(porterOrientation.value)  # right if +ve left if -ve
                     if self.angleChange > 180:
                         self.angleChange -= 360  # if >180 turn left instead of right
                     time.sleep(0.01) #sleep a bit so that the CPU isnt overloaded
@@ -371,8 +450,8 @@ class autoPilotThread(MultiThreadBase):
                 time.sleep(1)
 
                 #find the angle of the goal from north
-                self.dX = targetLocation[0] - porterLocation_Global[0]
-                self.dY = targetLocation[1] - porterLocation_Global[1]
+                self.dX = targetDestination[0] - porterLocation_Global[0]
+                self.dY = targetDestination[1] - porterLocation_Global[1]
 
                 if self.dX != 0:
                     self.angleToGoal = numpy.arctan(self.dY / self.dX)
@@ -384,33 +463,34 @@ class autoPilotThread(MultiThreadBase):
                 # convert angle to 0,2pi
                 if self.dX >= 0:  # positive x
                     if self.dY >= 0:
-                        self.angleToGoal = numpy.rad2deg(porterOrientation) - self.angleToGoal
+                        self.angleToGoal = numpy.rad2deg(porterOrientation.value) - self.angleToGoal
                     if self.dY < 0:  # negative y
-                        self.angleToGoal = numpy.rad2deg(porterOrientation) - self.angleToGoal
+                        self.angleToGoal = numpy.rad2deg(porterOrientation.value) - self.angleToGoal
 
                 elif self.dX < 0:  # negative x
                     if self.dY >= 0:  # positive y
-                        self.angleToGoal = numpy.rad2deg(porterOrientation) - (180 + self.angleToGoal)
+                        self.angleToGoal = numpy.rad2deg(porterOrientation.value) - (180 + self.angleToGoal)
                     if self.dY < 0:  # negative y
-                        self.angleToGoal = numpy.rad2deg(porterOrientation) - (180 + self.angleToGoal)
+                        self.angleToGoal = numpy.rad2deg(porterOrientation.value) - (180 + self.angleToGoal)
 
                 # at this point angleToGoal is defined relative to north
                 # if this works remove redundant IF statements. Currently used only for debugging.
 
                 #same as before, finding the angle that needs to be changed
-                self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation)
+                self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
                 if self.angleChange < -180:
                     self.angleChange += 360
 
-                with threadLock:
-                    if self.angleChange > self.alignmentThreshold:
-                        lastCommand = "r"
-                        speedVector = [self.autoSpeed, -self.autoSpeed]
-                        dataReady = True
-                    elif self.angleChange < self.alignmentThreshold:
-                        lastCommand = "l"
-                        speedVector = [-self.autoSpeed, self.autoSpeed]
-                        dataReady = True
+                if autoPilot and not exitFlag:
+                    with threadLock:
+                        if self.angleChange > self.alignmentThreshold:
+                            lastCommand = "r"
+                            speedVector = [self.autoSpeed, -self.autoSpeed]
+                            dataReady = True
+                        elif self.angleChange < self.alignmentThreshold:
+                            lastCommand = "l"
+                            speedVector = [-self.autoSpeed, self.autoSpeed]
+                            dataReady = True
 
                 speechQueue.put("Looking for the target destination")
                 logging.info("Looking for the target destination")
@@ -419,11 +499,10 @@ class autoPilotThread(MultiThreadBase):
                 # wait till its aligned
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
                     # keep checking the angle
-                    self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation)
+                    self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
                     if self.angleChange < -180:
                         self.angleChange += 360
                     time.sleep(0.01)
-
 
                 # stop turning
                 with threadLock:
@@ -448,8 +527,8 @@ class autoPilotThread(MultiThreadBase):
                 #     dataReady = True
 
                 # while (distanceToGoal > 30) and autoPilot and not exitFlag: #change this to allow for looping the whole block from else till at goal.
-                #     self.dX = targetLocation[0] - porterLocation_Global[0]
-                #     self.dY = targetLocation[1] - porterLocation_Global[1]
+                #     self.dX = targetDestination[0] - porterLocation_Global[0]
+                #     self.dY = targetDestination[1] - porterLocation_Global[1]
                 #     distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
 
                 with threadLock:
@@ -473,15 +552,15 @@ class autoPilotThread(MultiThreadBase):
 
     def checkdist(self, distScore):
 
-        directions = [numpy.rad2deg(porterOrientation), 180 - numpy.rad2deg(porterOrientation),
-                      90 - numpy.rad2deg(porterOrientation), 90 + numpy.rad2deg(porterOrientation)]
+        directions = [numpy.rad2deg(porterOrientation.value), 180 - numpy.rad2deg(porterOrientation.value),
+                      90 - numpy.rad2deg(porterOrientation.value), 90 + numpy.rad2deg(porterOrientation.value)]
 
         for direction in directions:
             tempXpos = porterLocation_Global[0] + self.distQuantise * numpy.cos(90 - direction)
             tempYpos = porterLocation_Global[1] + self.distQuantise * numpy.sin(90 - direction)
 
-            tempDX = targetLocation[0] - tempXpos
-            tempDY = targetLocation[1] - tempYpos
+            tempDX = targetDestination[0] - tempXpos
+            tempDY = targetDestination[1] - tempYpos
 
             tempDist = numpy.sqrt(numpy.square(tempDX) + numpy.square(tempDY))
             distScore.append(tempDist)
@@ -574,8 +653,8 @@ class debugThread(MultiThreadBase):
                     self.clientConnection.send(str(wheelSpeeds[1]) + ",")
                     #POSITIONS
                     #target
-                    self.clientConnection.send(str(targetLocation[0]) + ",") #11
-                    self.clientConnection.send(str(targetLocation[1]) + ",")
+                    self.clientConnection.send(str(targetDestination[0]) + ",") #11
+                    self.clientConnection.send(str(targetDestination[1]) + ",")
                     #Porter_global
                     self.clientConnection.send(str(porterLocation_Global[0]) + ",") #13
                     self.clientConnection.send(str(porterLocation_Global[1]) + ",")
@@ -603,7 +682,7 @@ class debugThread(MultiThreadBase):
                     self.clientConnection.send("\n")
 
                     # self.logOverNetwork()
-                    time.sleep(0.2)
+                    time.sleep(0.1)
 
                 except Exception as e:
                     logging.error("%s", str(e))
@@ -868,7 +947,6 @@ class usDataThread(MultiThreadBase):
 
     def run(self):
         global speedVector
-        # global USConnected
 
         logging.info("Starting")
         while not exitFlag:
@@ -898,8 +976,8 @@ class usDataThread(MultiThreadBase):
 
             if self.profiling:
                 time.sleep(0.1)
-                # self.loopEndFlag()
-                # self.loopRunTime()
+                self.loopEndFlag()
+                self.loopRunTime()
             else:
                 time.sleep(0.01)
 
@@ -994,46 +1072,26 @@ def porterSpeech(speechQueue,pExitFlag):
     while not pExitFlag.value:
         # talk while there are things to be said
         if not speechQueue.empty():
-            engine.say(speechQueue.get())
+
+            sp = speechQueue.get()
+            print "speech is " + sp
+            engine.say(sp)
             engine.runAndWait()
             #speechQueue.task_done()
         else:
             time.sleep(0.5)
 
+        #time.sleep(0.1)
+
+    logging.info("exiting speech")
     engine.say("Shutting down")
     engine.runAndWait()
-
 
 def cameraProcess():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
 
 
 ###---Function Definitions
-
-def simpTransform():
-    pass
-    # global porterLocation_Global
-    # global porterOrientation
-    # porterLocation_Global = porterLocation_Global + tMat
-    # porterOrientation = porterOrientation + theta
-
-
-def commandToTrans():
-    pass
-    # if lastCommand[0] == "F":
-    #     tMat[0] = lastCommand[1:len(lastCommand)]
-    # elif lastCommand[0] == "B":
-    #     tMat[1] = lastCommand[1:len(lastCommand)]
-    # elif lastCommand[0] == "L":
-    #     theta = lastCommand[1:len(lastCommand)]
-    # elif lastCommand[0] == "R":
-    #     theta = (-1) * lastCommand[1:len(lastCommand)]
-
-
-# Fil in a function based on the dynamics of the robot
-def getSafeDist(speed):
-    pass
-
 
 def cmdToSpeeds(inputCommand): #convert commands to speed vectors for manual control
     mSpeed = 0
@@ -1082,7 +1140,6 @@ def cmdToSpeeds(inputCommand): #convert commands to speed vectors for manual con
     elif inputCommand[0] == "l":
         return -(mSpeed-5), (mSpeed-5)
 
-
 def get_ip_address(ifname):
     if (platform == "linux") or (platform == "linux2"):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -1094,6 +1151,19 @@ def get_ip_address(ifname):
         )[20:24])
     else:
         logging.error("Not linux... cant find ipAddress")
+
+def cmdToDestination(inputCommand):
+    validateBuffer = [0,0]
+
+    if len(inputCommand) > 4:
+        try:
+            inputCommand.rstrip("\n")
+            validateBuffer = str(inputCommand[1:len(inputCommand)]).split(",")
+            return validateBuffer
+        except Exception as e:
+            logging.error("%s", e)
+    else:
+        logging.error("Invalid destination format")
 
 
 ######################################################
@@ -1109,16 +1179,21 @@ if __name__ == '__main__':
 
     #Start Speech Process
     logging.info("Starting speech Process...")
-    speechProcess = multiprocessing.Process(target=porterSpeech,name="Speech Process",args=(speechQueue,pExitFlag,))#ttsProcess("Speech Process")
+    speechProcess = multiprocessing.Process(target=porterSpeech,name="Speech Process",args=(speechQueue,pExitFlag,))
     speechProcess.start()
     processes.append(speechProcess)
 
     speechQueue.put("initialising")
+    time.sleep(2)
+    speechQueue.put("trying to run Tracker")
+
+
     #Start IMU data Process
     logging.info("Starting Porter Tracker")
-    trackerProcess = multiprocessing.Process(name="IMU Process",target=porterTracker, args=(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue,))
+    trackerProcess = multiprocessing.Process(name="IMU Process",target=porterTracker, args=(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue,speechQueue,))
     trackerProcess.start()
     processes.append(trackerProcess)
+    speechQueue.put("Tracker Running")
 
     #Start Autopilot thread
     logging.info("Starting Autopilot Thread")
@@ -1179,7 +1254,6 @@ if __name__ == '__main__':
             print ('Unable to establish serial comms to port /dev/ttyACM1')
             logging.error("%s", str(e))
             # USConnected = False
-
 
     # speechQueue.put("Setup Complete")
 
@@ -1291,13 +1365,22 @@ if __name__ == '__main__':
                             speechQueue.put("Turning On Autopilot")
                             autoPilot = True
                             safetyOn = True
+                            targetDestination = [-100, 100]  # go to global XY = -100,100
                             if dataReady != False:
                                 with threadLock:
                                     dataReady = False
 
                     elif dataInput[0] == "n" and autoPilot:
-                        # put the code for setting destination nodes here
-                        pass
+                        if not autoPilot:
+                            logging.info("Turning ON Autopilot. Send letter 'a' for emergency stop")
+                            speechQueue.put("Turning On Autopilot")
+                            autoPilot = True
+                            safetyOn = True
+                            logging.info("Setting Destination")
+                            targetDestination = cmdToDestination(dataInput)
+                            if dataReady != False:
+                                with threadLock:
+                                    dataReady = False
 
                     else:
                         if dataReady != False:
@@ -1332,7 +1415,6 @@ if __name__ == '__main__':
         logging.info("Closing %s thread", t)
         t.join()
 
-    #speechProcess.join()
     for p in processes:
         logging.info("Closing %s process", p)
         p.join()

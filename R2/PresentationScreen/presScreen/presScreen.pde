@@ -44,8 +44,8 @@ float [] demandedSpeedL = new float[40];
 float [] demandedSpeedR = new float[40];
 
 int [] targetLocation = new int[2];
-int [] porterLocation_Global = new int[2];
-int [] porterLocation_Local = new int[2];
+float [] porterLocation_Global = new float[2];
+float [] porterLocation_Local = new float[2];
 float porterOrientation = 0;
 float targetOrientation = 0;
 float porterYaw = 0;
@@ -118,8 +118,8 @@ void draw() {
 
           targetLocation[0] = Integer.parseInt(tokens[11]);
           targetLocation[1] = Integer.parseInt(tokens[12]);
-          porterLocation_Global[0] = Integer.parseInt(tokens[13]);
-          porterLocation_Global[1] = Integer.parseInt(tokens[14]);
+          porterLocation_Global[0] = Float.parseFloat(tokens[13]);
+          porterLocation_Global[1] = Float.parseFloat(tokens[14]);
         }
       }
     }
@@ -284,8 +284,8 @@ public class OrientationApplet extends PApplet {
 
     //draw target
 
-    int dX = targetLocation[0] - porterLocation_Global[0];
-    int dY = targetLocation[1] - porterLocation_Global[1];
+    float dX = targetLocation[0] - porterLocation_Global[0];
+    float dY = targetLocation[1] - porterLocation_Global[1];
 
     if (dX != 0)
         targetOrientation = atan(dY / dX);
