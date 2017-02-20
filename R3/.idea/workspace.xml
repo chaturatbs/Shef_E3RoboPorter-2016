@@ -13,9 +13,10 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/R3$R3_logger.coverage" NAME="R3_logger Coverage Results" MODIFIED="1487515563099" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/R3$R3_logger.coverage" NAME="R3_logger Coverage Results" MODIFIED="1487596454743" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/R3$multiProcessingSpeedtest.coverage" NAME="multiProcessingSpeedtest Coverage Results" MODIFIED="1487280730804" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/R3$R3_server.coverage" NAME="R3_server Coverage Results" MODIFIED="1487515461281" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/R3$KalmanExample.coverage" NAME="KalmanExample Coverage Results" MODIFIED="1487542153080" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/R3$R3_server.coverage" NAME="R3_server Coverage Results" MODIFIED="1487632098064" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
@@ -26,43 +27,63 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="R3_server.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="R3_server.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/R3_server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2142">
-              <caret line="1078" column="31" selection-start-line="1078" selection-start-column="31" selection-end-line="1078" selection-end-column="31" />
+            <state relative-caret-position="230">
+              <caret line="1342" column="17" selection-start-line="1342" selection-start-column="17" selection-end-line="1342" selection-end-column="17" />
               <folding>
                 <element signature="e#168#181#0" expanded="true" />
-                <element signature="e#3979#4067#0" expanded="false" />
-                <element signature="e#4217#5640#0" expanded="false" />
-                <element signature="e#5791#8200#0" expanded="false" />
-                <element signature="e#8341#9775#0" expanded="false" />
-                <element signature="e#11978#16775#0" expanded="false" />
-                <element signature="e#26613#33415#0" expanded="false" />
-                <element signature="e#31326#32293#0" expanded="false" />
-                <element signature="e#32333#33415#0" expanded="false" />
-                <element signature="e#33461#40720#0" expanded="false" />
-                <element signature="e#33834#38890#0" expanded="false" />
-                <element signature="e#40763#45582#0" expanded="false" />
-                <element signature="e#46447#47723#0" expanded="false" />
-                <element signature="e#47757#48149#0" expanded="false" />
-                <element signature="e#48191#48539#0" expanded="false" />
-                <element signature="e#49900#50216#0" expanded="false" />
-                <element signature="e#50473#51230#0" expanded="false" />
-                <element signature="e#51370#52133#0" expanded="false" />
-                <element signature="e#52285#53220#0" expanded="false" />
-                <element signature="e#54623#58207#0" expanded="false" />
+                <element signature="e#3931#4019#0" expanded="false" />
+                <element signature="e#4169#5592#0" expanded="false" />
+                <element signature="e#5743#8501#0" expanded="false" />
+                <element signature="e#10515#27701#0" expanded="false" />
+                <element signature="e#27743#34632#0" expanded="false" />
+                <element signature="e#28261#31523#0" expanded="false" />
+                <element signature="e#31562#32508#0" expanded="false" />
+                <element signature="e#32543#33510#0" expanded="false" />
+                <element signature="e#33550#34632#0" expanded="false" />
+                <element signature="e#34678#41937#0" expanded="false" />
+                <element signature="e#35051#40107#0" expanded="false" />
+                <element signature="e#41980#46799#0" expanded="false" />
+                <element signature="e#42024#42249#0" expanded="false" />
+                <element signature="e#42278#43499#0" expanded="false" />
+                <element signature="e#43536#43880#0" expanded="false" />
+                <element signature="e#43917#44311#0" expanded="false" />
+                <element signature="e#44356#46799#0" expanded="false" />
+                <element signature="e#46846#47367#0" expanded="false" />
+                <element signature="e#47606#48882#0" expanded="false" />
+                <element signature="e#48916#49308#0" expanded="false" />
+                <element signature="e#49350#49698#0" expanded="false" />
+                <element signature="e#51888#52645#0" expanded="false" />
+                <element signature="e#52785#53548#0" expanded="false" />
+                <element signature="e#57813#58797#0" expanded="false" />
+                <element signature="e#58883#59452#0" expanded="false" />
+                <marker date="1487634065171" expanded="false" signature="8609:10468" ph="..." />
+                <marker date="1487634065171" expanded="false" signature="17794:25147" ph="..." />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="R3_logger.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="R3_logger.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/R3_logger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
-              <caret line="102" column="26" selection-start-line="102" selection-start-column="26" selection-end-line="102" selection-end-column="26" />
+            <state relative-caret-position="204">
+              <caret line="106" column="0" selection-start-line="106" selection-start-column="0" selection-end-line="106" selection-end-column="0" />
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="KalmanExample.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/KalmanExample.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="595">
+              <caret line="35" column="0" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -70,7 +91,7 @@
       <file leaf-file-name="multiProcessingSpeedtest.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multiProcessingSpeedtest.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="786">
+            <state relative-caret-position="355">
               <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
               <folding>
                 <element signature="e#138#148#0" expanded="true" />
@@ -85,13 +106,21 @@
       </file>
     </leaf>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/multiProcessingSpeedtest.py" />
         <option value="$PROJECT_DIR$/IMU.py" />
-        <option value="$PROJECT_DIR$/R3_server.py" />
+        <option value="$PROJECT_DIR$/KalmanExample.py" />
         <option value="$PROJECT_DIR$/R3_logger.py" />
+        <option value="$PROJECT_DIR$/R3_server.py" />
       </list>
     </option>
   </component>
@@ -132,7 +161,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
@@ -154,6 +182,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -168,16 +197,16 @@
       <recent name="D:\Chatu Docs_MAIN\Sheffield\EEE\Year 4\EEE471\Shef_E3RoboPorter-2016\R3" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.R3_logger">
+  <component name="RunManager" selected="Python.R3_server">
     <configuration default="false" name="R3_server" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="" />
+      <option name="SDK_HOME" value="C:\Python27\python.exe" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="R3" />
@@ -219,6 +248,24 @@
       <module name="R3" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/R3_logger.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="KalmanExample" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Python27\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="R3" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/KalmanExample.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -431,16 +478,18 @@
       <option name="USE_KEYWORD" value="false" />
       <method />
     </configuration>
-    <list size="3">
+    <list size="4">
       <item index="0" class="java.lang.String" itemvalue="Python.R3_server" />
       <item index="1" class="java.lang.String" itemvalue="Python.multiProcessingSpeedtest" />
       <item index="2" class="java.lang.String" itemvalue="Python.R3_logger" />
+      <item index="3" class="java.lang.String" itemvalue="Python.KalmanExample" />
     </list>
     <recent_temporary>
-      <list size="3">
-        <item index="0" class="java.lang.String" itemvalue="Python.R3_logger" />
-        <item index="1" class="java.lang.String" itemvalue="Python.R3_server" />
-        <item index="2" class="java.lang.String" itemvalue="Python.multiProcessingSpeedtest" />
+      <list size="4">
+        <item index="0" class="java.lang.String" itemvalue="Python.R3_server" />
+        <item index="1" class="java.lang.String" itemvalue="Python.R3_logger" />
+        <item index="2" class="java.lang.String" itemvalue="Python.KalmanExample" />
+        <item index="3" class="java.lang.String" itemvalue="Python.multiProcessingSpeedtest" />
       </list>
     </recent_temporary>
   </component>
@@ -461,7 +510,7 @@
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22692889" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.23373677" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3252818" sideWeight="0.5030257" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -470,7 +519,7 @@
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.4969743" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25281805" sideWeight="0.4969743" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32850242" sideWeight="0.4969743" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.4969743" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3993559" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -498,40 +547,176 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/R3_server.py</url>
-          <line>1077</line>
+          <line>1101</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="11" />
+      <option name="time" value="14" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/R3_server.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="18326">
+          <caret line="1078" column="31" selection-start-line="1078" selection-start-column="31" selection-end-line="1078" selection-end-column="31" />
+          <folding>
+            <element signature="e#168#181#0" expanded="true" />
+            <element signature="e#3931#4019#0" expanded="false" />
+            <element signature="e#4169#5592#0" expanded="false" />
+            <element signature="e#5743#8501#0" expanded="false" />
+            <element signature="e#10515#27701#0" expanded="false" />
+            <element signature="e#27743#34632#0" expanded="false" />
+            <element signature="e#28261#31523#0" expanded="false" />
+            <element signature="e#31562#32508#0" expanded="false" />
+            <element signature="e#32543#33510#0" expanded="false" />
+            <element signature="e#33550#34632#0" expanded="false" />
+            <element signature="e#34678#41937#0" expanded="false" />
+            <element signature="e#35051#40107#0" expanded="false" />
+            <element signature="e#41980#46799#0" expanded="false" />
+            <element signature="e#42024#42249#0" expanded="false" />
+            <element signature="e#42278#43499#0" expanded="false" />
+            <element signature="e#43536#43880#0" expanded="false" />
+            <element signature="e#43917#44311#0" expanded="false" />
+            <element signature="e#44356#46799#0" expanded="false" />
+            <element signature="e#46846#47367#0" expanded="false" />
+            <element signature="e#47606#48882#0" expanded="false" />
+            <element signature="e#48916#49308#0" expanded="false" />
+            <element signature="e#49350#49698#0" expanded="false" />
+            <element signature="e#51888#52645#0" expanded="false" />
+            <element signature="e#52785#53548#0" expanded="false" />
+            <element signature="e#57813#58797#0" expanded="false" />
+            <element signature="e#58883#59452#0" expanded="false" />
+            <marker date="1487634065171" expanded="false" signature="8609:10468" ph="..." />
+            <marker date="1487634065171" expanded="false" signature="17794:25147" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R3_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="102" column="26" selection-start-line="102" selection-start-column="26" selection-end-line="102" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/KalmanExample.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multiProcessingSpeedtest.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1037">
+          <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
+          <folding>
+            <element signature="e#138#148#0" expanded="true" />
+            <element signature="e#1068#1722#0" expanded="false" />
+            <element signature="e#1761#1935#0" expanded="false" />
+            <element signature="e#1973#2017#0" expanded="false" />
+            <element signature="e#2098#4900#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R3_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7174">
+          <caret line="1078" column="31" selection-start-line="1078" selection-start-column="31" selection-end-line="1078" selection-end-column="31" />
+          <folding>
+            <element signature="e#168#181#0" expanded="true" />
+            <element signature="e#3931#4019#0" expanded="false" />
+            <element signature="e#4169#5592#0" expanded="false" />
+            <element signature="e#5743#8501#0" expanded="false" />
+            <element signature="e#10515#27701#0" expanded="false" />
+            <element signature="e#27743#34632#0" expanded="false" />
+            <element signature="e#28261#31523#0" expanded="false" />
+            <element signature="e#31562#32508#0" expanded="false" />
+            <element signature="e#32543#33510#0" expanded="false" />
+            <element signature="e#33550#34632#0" expanded="false" />
+            <element signature="e#34678#41937#0" expanded="false" />
+            <element signature="e#35051#40107#0" expanded="false" />
+            <element signature="e#41980#46799#0" expanded="false" />
+            <element signature="e#42024#42249#0" expanded="false" />
+            <element signature="e#42278#43499#0" expanded="false" />
+            <element signature="e#43536#43880#0" expanded="false" />
+            <element signature="e#43917#44311#0" expanded="false" />
+            <element signature="e#44356#46799#0" expanded="false" />
+            <element signature="e#46846#47367#0" expanded="false" />
+            <element signature="e#47606#48882#0" expanded="false" />
+            <element signature="e#48916#49308#0" expanded="false" />
+            <element signature="e#49350#49698#0" expanded="false" />
+            <element signature="e#51888#52645#0" expanded="false" />
+            <element signature="e#52785#53548#0" expanded="false" />
+            <element signature="e#57813#58797#0" expanded="false" />
+            <element signature="e#58883#59452#0" expanded="false" />
+            <marker date="1487634065171" expanded="false" signature="8609:10468" ph="..." />
+            <marker date="1487634065171" expanded="false" signature="17794:25147" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R3_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="102" column="26" selection-start-line="102" selection-start-column="26" selection-end-line="102" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multiProcessingSpeedtest.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1037">
+          <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
+          <folding>
+            <element signature="e#138#148#0" expanded="true" />
+            <element signature="e#1068#1722#0" expanded="false" />
+            <element signature="e#1761#1935#0" expanded="false" />
+            <element signature="e#1973#2017#0" expanded="false" />
+            <element signature="e#2098#4900#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R3_server.py">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#168#181#0" expanded="true" />
-            <element signature="e#3979#4067#0" expanded="false" />
-            <element signature="e#4217#5640#0" expanded="false" />
-            <element signature="e#5791#8200#0" expanded="false" />
-            <element signature="e#8341#9775#0" expanded="false" />
-            <element signature="e#11978#16775#0" expanded="false" />
-            <element signature="e#26613#33415#0" expanded="false" />
-            <element signature="e#31326#32293#0" expanded="false" />
-            <element signature="e#32333#33415#0" expanded="false" />
-            <element signature="e#33461#40720#0" expanded="false" />
-            <element signature="e#33834#38890#0" expanded="false" />
-            <element signature="e#40763#45582#0" expanded="false" />
-            <element signature="e#46447#47723#0" expanded="false" />
-            <element signature="e#47757#48149#0" expanded="false" />
-            <element signature="e#48191#48539#0" expanded="false" />
-            <element signature="e#49900#50216#0" expanded="false" />
-            <element signature="e#50473#51230#0" expanded="false" />
-            <element signature="e#51370#52133#0" expanded="false" />
-            <element signature="e#52285#53220#0" expanded="false" />
-            <element signature="e#54623#58207#0" expanded="false" />
+            <element signature="e#3931#4019#0" expanded="false" />
+            <element signature="e#4169#5592#0" expanded="false" />
+            <element signature="e#5743#8501#0" expanded="false" />
+            <element signature="e#10515#27701#0" expanded="false" />
+            <element signature="e#27743#34632#0" expanded="false" />
+            <element signature="e#28261#31523#0" expanded="false" />
+            <element signature="e#31562#32508#0" expanded="false" />
+            <element signature="e#32543#33510#0" expanded="false" />
+            <element signature="e#33550#34632#0" expanded="false" />
+            <element signature="e#34678#41937#0" expanded="false" />
+            <element signature="e#35051#40107#0" expanded="false" />
+            <element signature="e#41980#46799#0" expanded="false" />
+            <element signature="e#42024#42249#0" expanded="false" />
+            <element signature="e#42278#43499#0" expanded="false" />
+            <element signature="e#43536#43880#0" expanded="false" />
+            <element signature="e#43917#44311#0" expanded="false" />
+            <element signature="e#44356#46799#0" expanded="false" />
+            <element signature="e#46846#47367#0" expanded="false" />
+            <element signature="e#47606#48882#0" expanded="false" />
+            <element signature="e#48916#49308#0" expanded="false" />
+            <element signature="e#49350#49698#0" expanded="false" />
+            <element signature="e#51888#52645#0" expanded="false" />
+            <element signature="e#52785#53548#0" expanded="false" />
+            <element signature="e#57813#58797#0" expanded="false" />
+            <element signature="e#58883#59452#0" expanded="false" />
+            <marker date="1487634065171" expanded="false" signature="8609:10468" ph="..." />
+            <marker date="1487634065171" expanded="false" signature="17794:25147" ph="..." />
           </folding>
         </state>
       </provider>
@@ -562,7 +747,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1921">
           <caret line="113" column="0" selection-start-line="113" selection-start-column="0" selection-end-line="113" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -572,25 +756,33 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#168#181#0" expanded="true" />
-            <element signature="e#3979#4067#0" expanded="false" />
-            <element signature="e#4217#5640#0" expanded="false" />
-            <element signature="e#5791#8200#0" expanded="false" />
-            <element signature="e#8341#9775#0" expanded="false" />
-            <element signature="e#11978#16775#0" expanded="false" />
-            <element signature="e#26613#33415#0" expanded="false" />
-            <element signature="e#31326#32293#0" expanded="false" />
-            <element signature="e#32333#33415#0" expanded="false" />
-            <element signature="e#33461#40720#0" expanded="false" />
-            <element signature="e#33834#38890#0" expanded="false" />
-            <element signature="e#40763#45582#0" expanded="false" />
-            <element signature="e#46447#47723#0" expanded="false" />
-            <element signature="e#47757#48149#0" expanded="false" />
-            <element signature="e#48191#48539#0" expanded="false" />
-            <element signature="e#49900#50216#0" expanded="false" />
-            <element signature="e#50473#51230#0" expanded="false" />
-            <element signature="e#51370#52133#0" expanded="false" />
-            <element signature="e#52285#53220#0" expanded="false" />
-            <element signature="e#54623#58207#0" expanded="false" />
+            <element signature="e#3931#4019#0" expanded="false" />
+            <element signature="e#4169#5592#0" expanded="false" />
+            <element signature="e#5743#8501#0" expanded="false" />
+            <element signature="e#10515#27701#0" expanded="false" />
+            <element signature="e#27743#34632#0" expanded="false" />
+            <element signature="e#28261#31523#0" expanded="false" />
+            <element signature="e#31562#32508#0" expanded="false" />
+            <element signature="e#32543#33510#0" expanded="false" />
+            <element signature="e#33550#34632#0" expanded="false" />
+            <element signature="e#34678#41937#0" expanded="false" />
+            <element signature="e#35051#40107#0" expanded="false" />
+            <element signature="e#41980#46799#0" expanded="false" />
+            <element signature="e#42024#42249#0" expanded="false" />
+            <element signature="e#42278#43499#0" expanded="false" />
+            <element signature="e#43536#43880#0" expanded="false" />
+            <element signature="e#43917#44311#0" expanded="false" />
+            <element signature="e#44356#46799#0" expanded="false" />
+            <element signature="e#46846#47367#0" expanded="false" />
+            <element signature="e#47606#48882#0" expanded="false" />
+            <element signature="e#48916#49308#0" expanded="false" />
+            <element signature="e#49350#49698#0" expanded="false" />
+            <element signature="e#51888#52645#0" expanded="false" />
+            <element signature="e#52785#53548#0" expanded="false" />
+            <element signature="e#57813#58797#0" expanded="false" />
+            <element signature="e#58883#59452#0" expanded="false" />
+            <marker date="1487634065171" expanded="false" signature="8609:10468" ph="..." />
+            <marker date="1487634065171" expanded="false" signature="17794:25147" ph="..." />
           </folding>
         </state>
       </provider>
@@ -621,7 +813,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1870">
           <caret line="113" column="0" selection-start-line="113" selection-start-column="0" selection-end-line="113" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -643,13 +834,22 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="306">
           <caret line="118" column="11" selection-start-line="118" selection-start-column="11" selection-end-line="118" selection-end-column="11" />
-          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/KalmanExample.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="595">
+          <caret line="35" column="0" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/multiProcessingSpeedtest.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="786">
+        <state relative-caret-position="355">
           <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
           <folding>
             <element signature="e#138#148#0" expanded="true" />
@@ -661,45 +861,53 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/R3_server.py">
+    <entry file="file://$PROJECT_DIR$/R3_logger.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2142">
-          <caret line="1078" column="31" selection-start-line="1078" selection-start-column="31" selection-end-line="1078" selection-end-column="31" />
-          <folding>
-            <element signature="e#168#181#0" expanded="true" />
-            <element signature="e#3979#4067#0" expanded="false" />
-            <element signature="e#4217#5640#0" expanded="false" />
-            <element signature="e#5791#8200#0" expanded="false" />
-            <element signature="e#8341#9775#0" expanded="false" />
-            <element signature="e#11978#16775#0" expanded="false" />
-            <element signature="e#26613#33415#0" expanded="false" />
-            <element signature="e#31326#32293#0" expanded="false" />
-            <element signature="e#32333#33415#0" expanded="false" />
-            <element signature="e#33461#40720#0" expanded="false" />
-            <element signature="e#33834#38890#0" expanded="false" />
-            <element signature="e#40763#45582#0" expanded="false" />
-            <element signature="e#46447#47723#0" expanded="false" />
-            <element signature="e#47757#48149#0" expanded="false" />
-            <element signature="e#48191#48539#0" expanded="false" />
-            <element signature="e#49900#50216#0" expanded="false" />
-            <element signature="e#50473#51230#0" expanded="false" />
-            <element signature="e#51370#52133#0" expanded="false" />
-            <element signature="e#52285#53220#0" expanded="false" />
-            <element signature="e#54623#58207#0" expanded="false" />
-          </folding>
+        <state relative-caret-position="204">
+          <caret line="106" column="0" selection-start-line="106" selection-start-column="0" selection-end-line="106" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/R3_logger.py">
+    <entry file="file://$PROJECT_DIR$/R3_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="102" column="26" selection-start-line="102" selection-start-column="26" selection-end-line="102" selection-end-column="26" />
-          <folding />
+        <state relative-caret-position="230">
+          <caret line="1342" column="17" selection-start-line="1342" selection-start-column="17" selection-end-line="1342" selection-end-column="17" />
+          <folding>
+            <element signature="e#168#181#0" expanded="true" />
+            <element signature="e#3931#4019#0" expanded="false" />
+            <element signature="e#4169#5592#0" expanded="false" />
+            <element signature="e#5743#8501#0" expanded="false" />
+            <element signature="e#10515#27701#0" expanded="false" />
+            <element signature="e#27743#34632#0" expanded="false" />
+            <element signature="e#28261#31523#0" expanded="false" />
+            <element signature="e#31562#32508#0" expanded="false" />
+            <element signature="e#32543#33510#0" expanded="false" />
+            <element signature="e#33550#34632#0" expanded="false" />
+            <element signature="e#34678#41937#0" expanded="false" />
+            <element signature="e#35051#40107#0" expanded="false" />
+            <element signature="e#41980#46799#0" expanded="false" />
+            <element signature="e#42024#42249#0" expanded="false" />
+            <element signature="e#42278#43499#0" expanded="false" />
+            <element signature="e#43536#43880#0" expanded="false" />
+            <element signature="e#43917#44311#0" expanded="false" />
+            <element signature="e#44356#46799#0" expanded="false" />
+            <element signature="e#46846#47367#0" expanded="false" />
+            <element signature="e#47606#48882#0" expanded="false" />
+            <element signature="e#48916#49308#0" expanded="false" />
+            <element signature="e#49350#49698#0" expanded="false" />
+            <element signature="e#51888#52645#0" expanded="false" />
+            <element signature="e#52785#53548#0" expanded="false" />
+            <element signature="e#57813#58797#0" expanded="false" />
+            <element signature="e#58883#59452#0" expanded="false" />
+            <marker date="1487634065171" expanded="false" signature="8609:10468" ph="..." />
+            <marker date="1487634065171" expanded="false" signature="17794:25147" ph="..." />
+          </folding>
         </state>
       </provider>
     </entry>
   </component>
   <component name="webServersAuthStorage">
-    <data>AAAAcAiY9/dWCuLMWYHgBDqsf6zRv+xk5OXnYFdLUU5Pwr3VMkZU2zvNPIS0gN3JdKLMgaOrBAMG47kRce4Il89a0eWwesMbpMDS12IFnrqgSy0Rf+Ko97tyTQLVLf6ogc4mksJ06fFb1/30M64PltuI3vvkhH7WatUFC0Qypgbfb4Yk</data>
+    <data>AAAAcKbm8n8GMsqg9ole+m20M91CCYPYu9oGRMMo+s4q76eez+u2jzpvfrLYiKj19m4S4Sptx6H3VIOKHg2cfUCE1M4gRp5zF3u0JeCB+LUHbtsMfytOGosAUIHwsUhAxlqCXkobvmBGQziwfiqWsraCUWvHo9nSOXH9HOmy/QjxxKsd</data>
   </component>
 </project>

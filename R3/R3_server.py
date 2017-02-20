@@ -37,7 +37,7 @@ logging.basicConfig(format='%(asctime)s - (%(threadName)s) %(levelname)s: %(mess
                     level=logging.INFO) #change the logging level here to change the display verbosity
 
 ###---Global Variables-------------
-mpManager = multiprocessing.Manager()
+
 
 ##--Motor Commands
 global lastCommand #holds the last command that was sent to the motor controllers
@@ -48,7 +48,7 @@ global wheelSpeeds #measured wheel speeds
 lastCommand = ""
 speedVector = [0, 0]
 lastSent = [0, 0]
-wheelSpeeds = mpManager.list([0, 0])
+
 dataReady = False
 
 # global USConnected
@@ -74,10 +74,12 @@ USThresholds = [50, 30, 30] #threasholds for treating objects as obstacles [fron
 global threadLock #lock to be used when changing global variables
 global speechQueue #Queue holding sentences to be spoken
 global pulsesQueue #Queue holding the measured wheel encoder pulses
+global serverFeedbackQueue
 
 threadLock = threading.Lock()
 speechQueue = multiprocessing.Queue()
 pulsesQueue = multiprocessing.Queue()
+serverFeedbackQueue = multiprocessing.Queue()
 
 threads = [] #Array holding information on the currently running threads
 processes = [] #Array holding information on the currently running Processes
@@ -111,10 +113,12 @@ global targetDestination  #Target location in global coordinates in cm
 global distanceToGoal #Distance to goal in cm
 
 targetDestination = [0,0]
-porterLocation_Global = mpManager.list([0, 0]) #set location to "undefined"
-porterLocation_Local = mpManager.list([0, 0])
+
 porterOrientation = multiprocessing.Value('d',0.0)  # from north heading (in degrees?)
 distanceToGoal = 0
+
+orientationIMU = 0.
+orientationWheels = multiprocessing.Value("d", 0.0)
 
 ##-System State Variables
 localCtrl = True #Local control = commands sent through SSH not TCP/IP
@@ -173,38 +177,45 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
 
 def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue, speechQueue):
 
+    AHRSmode = "wheel"  # can be imu or wheel. Defaults to wheel
+    pulseData = ["", ""]  # pulses counted by the motor controller
+
+    if AHRSmode is not "imu" or "wheel":
+        AHRSmode = "wheel"
+
     if platform == "linux" or platform == "linux2":  # if running on linux
         IMUSettingsFile = RTIMU.Settings("mainIMUcal")  # load IMU caliberation file
         imu = RTIMU.RTIMU(IMUSettingsFile)  # initialise the IMU handle
         imuEnable.value = True  # IMU is initialised
 
-    logging.info("IMU Name: " + imu.IMUName())
+    if imuEnable.value:
+        logging.info("IMU Name: " + imu.IMUName())
 
-    if (not imu.IMUInit()):
-        logging.error("IMU Init Failed")
-        speechQueue.put("IMU Initiation Failed")
-        imuEnable.value = False
-    else:  # if connection successful...
-        logging.info("IMU Init Succeeded")
-        speechQueue.put("IMU Successfully Initiated")
-        imu.setSlerpPower(0.02)
-        imu.setGyroEnable(True)
-        imu.setAccelEnable(True)
-        imu.setCompassEnable(True)
-        imuEnable.value = True
-        poll_interval = imu.IMUGetPollInterval()
-        logging.debug("Recommended Poll Interval: %dmS\n" % poll_interval)
-        logging.info("IMU is %s", str(imu))
-
-    pulseData = ["",""] #pulses counted by the motor controller
+        if (not imu.IMUInit()):
+            logging.error("IMU Init Failed")
+            speechQueue.put("IMU Initiation Failed")
+            imuEnable.value = False
+        else:  # if connection successful...
+            logging.info("IMU Init Succeeded")
+            speechQueue.put("IMU Successfully Initiated")
+            imu.setSlerpPower(0.02)
+            imu.setGyroEnable(True)
+            imu.setAccelEnable(True)
+            imu.setCompassEnable(True)
+            imuEnable.value = True
+            poll_interval = imu.IMUGetPollInterval()
+            logging.debug("Recommended Poll Interval: %dmS\n" % poll_interval)
+            logging.info("IMU is %s", str(imu))
 
     while not pExitFlag.value:  # while the system isn't in shutdown mode
-        if imu.IMURead():  # if data is available from the IMU...
-            logging.debug("Reading IMU")
-            globalIMUData = imu.getIMUData()  # read the IMU data into the global variable
-            globalIMUFusion = globalIMUData["fusionPose"]  # extract AHRS fusion info NOTE
-            time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)  # delay to sync with the recomended poll rate of the IMU
-            porterOrientation.value = globalIMUFusion[2]  # get Yaw Data
+        if imuEnable.value:
+            if imu.IMURead():  # if data is available from the IMU...
+                logging.debug("Reading IMU")
+                globalIMUData = imu.getIMUData()  # read the IMU data into the global variable
+                globalIMUFusion = globalIMUData["fusionPose"]  # extract AHRS fusion info NOTE
+                time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)  # delay to sync with the recomended poll rate of the IMU
+                if AHRSmode is "imu":
+                    porterOrientation.value = globalIMUFusion[2]  # get Yaw Data
 
         if not pulsesQueue.empty():  # if theres data on the pulse Queue...
             #logging.info("getting data")
@@ -215,20 +226,22 @@ def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation,
                 pulseData[0] = int((pulseData[0][0]) + str(int("0x" + str(pulseData[0][1:]), 16)))
                 pulseData[1] = int((pulseData[1][0]) + str(int("0x" + str(pulseData[1][1:]), 16)))
 
-                porterLocation_Global, wheelSpeeds = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds)
+                porterLocation_Global, wheelSpeeds, orientationWheels.value = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds,orientationWheels)
+                if AHRSmode is "wheel":
+                    porterOrientation.value = orientationWheels.value
+
             except Exception as e:
                 logging.error("%s", str(e))
 
-            #pulsesQueue.task_done()  # set task complete in the Queue. (othewise the system will no be able to shut down)
 
-def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelSpeeds):  # function for calculating the distance moved
+def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelSpeeds,orientationWheels):  # function for calculating the distance moved
     # Assume that it doesnt "move" when rotating
     # Need to check if this function is mathematically sound for all r, theta.
 
     timeInterval = 0.5  # sampling interval of the motor controller
     wheelRadius = 20
     pulsesPerRev = 360
-
+    wheelBaseWidth = 71
     # find the wheel speeds
     wheelSpeeds[0] = ((lPulses / timeInterval) * 60) / pulsesPerRev
     wheelSpeeds[1] = ((rPulses / timeInterval) * 60) / pulsesPerRev
@@ -239,8 +252,16 @@ def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelS
     rDist = (2 * numpy.pi * rPulses / pulsesPerRev) * wheelRadius
 
     r = (lDist + rDist) / 2  # take the average of the distances for now.
+    distDelta = (lDist - rDist)
 
-    # # r is the staight line distance traveled... so find x,y components
+    orientationWheels.value += distDelta/wheelBaseWidth
+
+    if orientationWheels.value > numpy.pi:
+        orientationWheels.value -= 2*numpy.pi
+    elif orientationWheels.value < -numpy.pi:
+        orientationWheels.value += 2 * numpy.pi
+
+        # # r is the staight line distance traveled... so find x,y components
     #if lastCommand == "f":
 
     porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
@@ -250,10 +271,9 @@ def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelS
     #     porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
     #     porterLocation_Global[1] = porterLocation_Global[1] - r * numpy.sin(numpy.pi/2 - porterOrientation.value)  # y component
 
-    print (porterLocation_Global)
-    print (porterOrientation.value)
+    #print (str(porterLocation_Global) + " __ " + str(porterOrientation.value)+ " __ " + str(orientationWheels.value))
 
-    return porterLocation_Global,wheelSpeeds
+    return porterLocation_Global,wheelSpeeds,orientationWheels.value
 
 
 class autoPilotThread(MultiThreadBase):
@@ -293,8 +313,9 @@ class autoPilotThread(MultiThreadBase):
         while not exitFlag: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
                 time.sleep(1) #...sleep for a bit ...zzzzzzz
-            elif not imuEnable:
+            elif not imuEnable.value:
                 logging.warning("IMU not available. Can't turn on Autopilot... Soz...")
+                speechQueue.put("IMU not available. Can't turn on Autopilot...")
                 autoPilot = False
             elif self.looping: #iterative mode
                 porterLocation_Global = porterLocation_Local  # for now assume local position is the same as global
@@ -409,9 +430,10 @@ class autoPilotThread(MultiThreadBase):
                     # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
 
                 # find the required angle change to align to global grid
-                logging.info("Looking for north")
-                speechQueue.put("Looking for north") #vocalise
-                time.sleep(1) #sleep for presentation purposes
+                if autoPilot and not exitFlag:
+                    logging.info("Looking for north")
+                    speechQueue.put("Looking for north") #vocalise
+                    time.sleep(1) #sleep for presentation purposes
 
                 # Orienting to X-axis...
                 self.angleChange = 90 - numpy.rad2deg(porterOrientation.value) #find required angle change
@@ -445,9 +467,10 @@ class autoPilotThread(MultiThreadBase):
                     dataReady = True
 
                 # aligned to x axis... YAY!
-                speechQueue.put("Aligned to X axis")
-                logging.info("Aligned to X axis")
-                time.sleep(1)
+                if autoPilot and not exitFlag:
+                    speechQueue.put("Aligned to X axis")
+                    logging.info("Aligned to X axis")
+                    time.sleep(1)
 
                 #find the angle of the goal from north
                 self.dX = targetDestination[0] - porterLocation_Global[0]
@@ -492,9 +515,10 @@ class autoPilotThread(MultiThreadBase):
                             speedVector = [-self.autoSpeed, self.autoSpeed]
                             dataReady = True
 
-                speechQueue.put("Looking for the target destination")
-                logging.info("Looking for the target destination")
-                time.sleep(1)
+                if autoPilot and not exitFlag:
+                    speechQueue.put("Looking for the target destination")
+                    logging.info("Looking for the target destination")
+                    time.sleep(1)
 
                 # wait till its aligned
                 while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
@@ -510,15 +534,17 @@ class autoPilotThread(MultiThreadBase):
                     speedVector = [0, 0]
                     dataReady = True
                     # aligned to x axis
-                speechQueue.put("Aligned to the target destination")
-                logging.info("Aligned to the target destination")
-                time.sleep(1)
+                if autoPilot and not exitFlag:
+                    speechQueue.put("Aligned to the target destination")
+                    logging.info("Aligned to the target destination")
+                    time.sleep(1)
 
                 # find distance to Goal
                 distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
                 # move to destination
-                speechQueue.put("Moving to the target")
-                logging.info("Moving to Target")
+                if autoPilot and not exitFlag:
+                    speechQueue.put("Moving to the target")
+                    logging.info("Moving to Target")
 
                 #COMPLETE THIS BIT
                 # with threadLock:
@@ -536,9 +562,10 @@ class autoPilotThread(MultiThreadBase):
                     speedVector = [0, 0]
                     dataReady = True
 
-                speechQueue.put("Successfully arrived at the target")
-                logging.info("Successfully arrived at the target")
-                autoPilot = False #turn off autopilot at the end of the maneuver
+                if autoPilot and not exitFlag:
+                    speechQueue.put("Successfully arrived at the target")
+                    logging.info("Successfully arrived at the target")
+                    autoPilot = False #turn off autopilot at the end of the maneuver
 
     ###TO BE IMPLEMENTED
     ##AutoPilot motion to be quantised to distQuantise
@@ -677,12 +704,13 @@ class debugThread(MultiThreadBase):
                     # obstruction status
                     self.clientConnection.send(str(obstruction) + ",") #21
                     # data status
-                    self.clientConnection.send(str(dataReady)) #22
+                    self.clientConnection.send(str(dataReady)+",") #22
+
+                    self.clientConnection.send(str(orientationWheels.value))  # 21
 
                     self.clientConnection.send("\n")
-
                     # self.logOverNetwork()
-                    time.sleep(0.1)
+                    time.sleep(0.5)
 
                 except Exception as e:
                     logging.error("%s", str(e))
@@ -1062,7 +1090,6 @@ class usDataThread(MultiThreadBase):
             self.errorCount += 1
             logging.error("%s", str(e))
 
-
 def porterSpeech(speechQueue,pExitFlag):
     # initialise speech engine
     engine = pyttsx.init()
@@ -1072,10 +1099,7 @@ def porterSpeech(speechQueue,pExitFlag):
     while not pExitFlag.value:
         # talk while there are things to be said
         if not speechQueue.empty():
-
-            sp = speechQueue.get()
-            print "speech is " + sp
-            engine.say(sp)
+            engine.say(speechQueue.get())
             engine.runAndWait()
             #speechQueue.task_done()
         else:
@@ -1172,10 +1196,18 @@ def cmdToDestination(inputCommand):
 
 if __name__ == '__main__':
 
-    logging.info("Starting system...")
-    sysRunning = True
+    multiprocessing.freeze_support()
+    mpManager = multiprocessing.Manager()
+
+    wheelSpeeds = mpManager.list([0, 0])
+    porterLocation_Global = mpManager.list([0, 0])  # set location to "undefined"
+    porterLocation_Local = mpManager.list([0, 0])
+
     qrDic = mpManager.dict()
     vpDict = mpManager.dict()
+
+    logging.info("Starting system...")
+    sysRunning = True
 
     #Start Speech Process
     logging.info("Starting speech Process...")
@@ -1184,9 +1216,8 @@ if __name__ == '__main__':
     processes.append(speechProcess)
 
     speechQueue.put("initialising")
-    time.sleep(2)
-    speechQueue.put("trying to run Tracker")
-
+    #time.sleep(2)
+    #speechQueue.put("trying to run Tracker")
 
     #Start IMU data Process
     logging.info("Starting Porter Tracker")
@@ -1308,7 +1339,7 @@ if __name__ == '__main__':
         while cmdExpecting:
             print ("Motor commands are expecting...")
             if not localCtrl:
-                dataInput = clientConnection.recv(1024)
+                dataInput = clientConnection.recv(1024) #maybe make this non blocking?
             else:
                 dataInput = raw_input("Please Enter Commands on local terminal...\n")
 
@@ -1337,7 +1368,8 @@ if __name__ == '__main__':
                     elif dataInput[0] == "s" and not autoPilot: #Toggle safety
                         if safetyOn:
                             dataInput = raw_input("Do you solemnly swear you're up to no good!?..")
-                            if dataInput[0] == "Y":
+
+                            if len(dataInput) > 0 and dataInput[0] == "Y":
                                 print ("May the force be with you... you are going to need it...")
                                 print ("(just don't tell Ms Webster about it... >,< )")
                                 safetyOn = False
