@@ -91,6 +91,9 @@ import serial
 import sys
 from msvcrt import getch
 
+import csv
+from datetime import datetime
+
 #define variables for speed/angle/direction
 
 #set the server address and port
@@ -112,6 +115,7 @@ print (("Server says - " + s.recv(1024)))
 usInput = ""
 s.send("S1")
 vCon = False
+logToFile = False
 
 try:
     viewerCon = serial.Serial('COM7', 19200)
@@ -120,6 +124,13 @@ try:
 except Exception as e:
     print(str(e))
 
+if logToFile:
+    dt = datetime.now()
+    fileName = "Logfile - " + dt.strftime("%Y_%m_%d-%H%M") + ".csv"
+    logFile = open(fileName, 'wb')
+    spamwriter = csv.writer(logFile, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
 #while the user doesnt stop communication using "esc"...
 while True:
     data = s.recv(1024)
@@ -127,6 +138,8 @@ while True:
     #print (data)
 
     try:
+        if logToFile:
+            spamwriter.writerow(data)
         viewerCon.write(data)
     except Exception as e:
         print(str(e))

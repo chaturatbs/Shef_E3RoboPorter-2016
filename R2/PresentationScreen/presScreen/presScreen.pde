@@ -47,6 +47,7 @@ int [] targetLocation = new int[2];
 float [] porterLocation_Global = new float[2];
 float [] porterLocation_Local = new float[2];
 float porterOrientation = 0;
+float wheelOrientation = 0;
 float targetOrientation = 0;
 float porterYaw = 0;
 
@@ -98,7 +99,7 @@ void draw() {
         println(inBuffer);
         String[] tokens = inBuffer.split(delims);
         //println(tokens.length);
-        if (tokens.length == 23){
+        if (tokens.length == 24){
           for (int i = 0; i < 6; i++) {
              distances[i] = int(Float.parseFloat(tokens[i+1]));
           }
@@ -115,7 +116,7 @@ void draw() {
           rightWheel.setData(timeSeries, rightSpeeds);
 
           porterOrientation = degrees(Float.parseFloat(tokens[18]));
-
+          wheelOrientation = degrees(Float.parseFloat(tokens[24]));
           targetLocation[0] = Integer.parseInt(tokens[11]);
           targetLocation[1] = Integer.parseInt(tokens[12]);
           porterLocation_Global[0] = Float.parseFloat(tokens[13]);
@@ -220,9 +221,9 @@ public class SpeedApplet extends PApplet {
     // Axis formatting and labels.
     leftWheel.showXAxis(true);
     leftWheel.showYAxis(true);
-
-    leftWheel.setMinY(0);
-    rightWheel.setMinY(0);
+   
+    leftWheel.setMinY(-30);
+    rightWheel.setMinY(-30);
 
     leftWheel.setMaxY(100);
     rightWheel.setMaxY(100);
@@ -292,8 +293,6 @@ public class OrientationApplet extends PApplet {
     else
         targetOrientation = HALF_PI;
 
-
-
     x = 130 * cos(targetOrientation+HALF_PI);
     y = 130 * sin(targetOrientation+HALF_PI);
 
@@ -309,6 +308,17 @@ public class OrientationApplet extends PApplet {
 
     //draw porter orientation
     stroke(50,50,200);
+    strokeWeight(3);
+    line(200, 200, 200-x, 200-y);
+    
+    x = 0;
+    y = 0;
+
+    x = 130 * cos(radians(wheelOrientation+90));
+    y = 130 * sin(radians(wheelOrientation+90));
+
+    //draw porter orientation
+    stroke(200,50,50);
     strokeWeight(3);
     line(200, 200, 200-x, 200-y);
   }

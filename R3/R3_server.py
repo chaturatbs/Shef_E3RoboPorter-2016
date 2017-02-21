@@ -91,9 +91,7 @@ global QRdata #String read from the QR code
 QRdetected = False
 QRdata = ""
 
-
 # -Camera Functions
-
 
 # -IMU data
 #global imu #Handle for the IMU
@@ -1342,7 +1340,6 @@ if __name__ == '__main__':
                 dataInput = clientConnection.recv(1024) #maybe make this non blocking?
             else:
                 dataInput = raw_input("Please Enter Commands on local terminal...\n")
-
             if dataInput == "e": #shutdown command server
                 cmdExpecting = False
                 break
@@ -1413,7 +1410,6 @@ if __name__ == '__main__':
                             if dataReady != False:
                                 with threadLock:
                                     dataReady = False
-
                     else:
                         if dataReady != False:
                             with threadLock:
