@@ -4,7 +4,7 @@
 
 # Author     - C. Samarakoon
 # Created    - 16/02/2017
-# Modified   - 16/02/2017
+# Modified   - 22/02/2017
 #
 ###---Imports-------------------
 import socket
@@ -171,15 +171,18 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
             self.avgCounter = 0
 
 
+##---------Mapping process
+
+
 ##----------IMU process
 
 def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue, speechQueue):
 
-    AHRSmode = "wheel"  # can be imu or wheel. Defaults to wheel
+    AHRSmode = "imu"  # can be imu or wheel. Defaults to wheel
     pulseData = ["", ""]  # pulses counted by the motor controller
 
-    if AHRSmode is not "imu" or "wheel":
-        AHRSmode = "wheel"
+    # if AHRSmode is not "imu" or "wheel":
+    #     AHRSmode = "wheel"
 
     if platform == "linux" or platform == "linux2":  # if running on linux
         IMUSettingsFile = RTIMU.Settings("mainIMUcal")  # load IMU caliberation file
@@ -225,8 +228,8 @@ def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation,
                 pulseData[1] = int((pulseData[1][0]) + str(int("0x" + str(pulseData[1][1:]), 16)))
 
                 porterLocation_Global, wheelSpeeds, orientationWheels.value = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds,orientationWheels)
-                if AHRSmode is "wheel":
-                    porterOrientation.value = orientationWheels.value
+                # if AHRSmode is "wheel":
+                #     porterOrientation.value = orientationWheels.value
 
             except Exception as e:
                 logging.error("%s", str(e))
@@ -282,20 +285,24 @@ class autoPilotThread(MultiThreadBase):
 
         self.angleToGoal = 0 #angle between the goal and the robot
         self.angleChange = 0 #angle change required
-        self.alignmentThreshold = 5 #alignment error in degrees
-        # self.distanceToGo = 0
+
         self.dX = 0
         self.dY = 0
-        self.autoSpeed = 10 #autopilot movement speed
-
-        self.distQuantise = 30 #path re-calculation distance
 
         #path-finding parameters
         self.recPenalty = 0.2 #penalty for recursion
         self.momentumBonus = 0.5 #bonus for momentum conservation
         self.alpha = 1 #
         self.beta = 10
+
+        #Autopilot Control parameters
         self.looping = False
+        self.obs = False
+        self.distQuantise = 30  # path re-calculation distance
+        self.autoSpeed = 10  # autopilot movement speed
+        self.alignmentThreshold = 5  # alignment error in degrees
+        self.hScores = []
+        self.bestScoreIndex = 0
 
     def run(self):
         global threadLock
@@ -315,6 +322,40 @@ class autoPilotThread(MultiThreadBase):
                 logging.warning("IMU not available. Can't turn on Autopilot... Soz...")
                 speechQueue.put("IMU not available. Can't turn on Autopilot...")
                 autoPilot = False
+            elif self.looping and self.obs:
+                porterLocation_Global = porterLocation_Local  # for now assume local position is the same as global
+                # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
+                logging.info("Iteratve Autopilot mode with Obstacle Avoidance")
+                speechQueue.put("Iteratve Autopilot mode with Obstacle Avoidance")  # vocalise
+
+                while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > 30:
+                # find the angle of the goal from north
+
+                    speechQueue.put("Quantising the environment")
+                    logging.info("Quantising The environment")
+
+                    self.hScores = self.checkquad()
+
+                    if self.bestScoreIndex == 0:
+                        speechQueue.put("Best way to go is forward")
+                        self.moveStraight(dist=30,direction="f")
+                    elif self.bestScoreIndex == 1:
+                        speechQueue.put("Best way to go is backwards")
+                        self.moveStraight(dist=30, direction="b")
+                    elif self.bestScoreIndex == 2:
+                        speechQueue.put("Best way to go is left")
+                        self.turn(angleChange= -90)
+                    elif self.bestScoreIndex == 3:
+                        speechQueue.put("Best way to go is right")
+                        self.turn(angleChange= 90)
+
+                    self.dX = targetDestination[0] - porterLocation_Global[0]
+                    self.dY = targetDestination[1] - porterLocation_Global[1]
+
+                speechQueue.put("Successfully arrived at the target")
+                logging.info("Successfully arrived at the target")
+                autoPilot = False  # turn off autopilot at the end of the maneuver
+
             elif self.looping: #iterative mode
                 porterLocation_Global = porterLocation_Local  # for now assume local position is the same as global
                 # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
@@ -423,6 +464,7 @@ class autoPilotThread(MultiThreadBase):
                 speechQueue.put("Successfully arrived at the target")
                 logging.info("Successfully arrived at the target")
                 autoPilot = False  # turn off autopilot at the end of the maneuver
+
             else: #if in autopilot mode...
                 porterLocation_Global = porterLocation_Local # for now assume local position is the same as global
                     # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
@@ -565,6 +607,62 @@ class autoPilotThread(MultiThreadBase):
                     logging.info("Successfully arrived at the target")
                     autoPilot = False #turn off autopilot at the end of the maneuver
 
+    def turn(self,angleChange):
+        global lastCommand
+        global speedVector
+        global dataReady
+
+        initOrientation = numpy.rad2deg(porterOrientation.value)
+
+        if autoPilot and not exitFlag:
+            with threadLock:
+                if angleChange > self.alignmentThreshold:
+                    lastCommand = "r"
+                    speedVector = [self.autoSpeed, -self.autoSpeed]
+                    dataReady = True
+                elif angleChange < self.alignmentThreshold:
+                    lastCommand = "l"
+                    speedVector = [-self.autoSpeed, self.autoSpeed]
+                    dataReady = True
+
+        while (abs(initOrientation - numpy.rad2deg(porterOrientation.value)) < (abs(angleChange) + self.alignmentThreshold)) and autoPilot and not exitFlag:  # while not aligned
+            time.sleep(0.01)  # sleep a bit so that the CPU isnt overloaded
+
+        # stop turning
+        with threadLock:
+            lastCommand = "x"
+            speedVector = [0, 0]
+            dataReady = True
+
+
+    def moveStraight(self,dist,direction): #direction can be "f" or "b"
+        global lastCommand
+        global speedVector
+        global dataReady
+
+        with threadLock:
+            if direction == "f":
+                lastCommand = "f"
+                speedVector = [self.autoSpeed, self.autoSpeed]
+                dataReady = True
+            elif direction == "b":
+                lastCommand = "b"
+                speedVector = [self.autoSpeed, self.autoSpeed]
+                dataReady = True
+
+        initLoc = porterLocation_Global
+        self.distTravelled = 0
+
+        while (self.distTravelled < dist) and autoPilot and not exitFlag:  # change this to allow for looping the whole block from else till at goal.
+            self.dX = porterLocation_Global[0] - initLoc[0]
+            self.dY = porterLocation_Global[1] - initLoc[1]
+            self.distTravelled = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
+
+        with threadLock:
+            lastCommand = "x"
+            speedVector = [0, 0]
+            dataReady = True
+
     ###TO BE IMPLEMENTED
     ##AutoPilot motion to be quantised to distQuantise
 
@@ -626,9 +724,11 @@ class autoPilotThread(MultiThreadBase):
         # else:
         #     print('start of run, no momentum bonus')
 
+        self.bestScoreIndex = score.index(max(score))
+
         print("heuristic score is " + str(score))
-        print("max heuristic score is " + str(max(score)) + " and its at " +
-              str(score.index(max(score))))
+        print("max heuristic score is " + str(max(score)) + " and its at " + str( self.bestScoreIndex))
+
         return score
 
 class debugThread(MultiThreadBase):
@@ -704,11 +804,11 @@ class debugThread(MultiThreadBase):
                     # data status
                     self.clientConnection.send(str(dataReady)+",") #22
 
-                    self.clientConnection.send(str(orientationWheels.value))  # 21
+                    self.clientConnection.send(str(orientationWheels.value))  # 23
 
                     self.clientConnection.send("\n")
                     # self.logOverNetwork()
-                    time.sleep(0.5)
+                    time.sleep(0.2)
 
                 except Exception as e:
                     logging.error("%s", str(e))
@@ -1105,7 +1205,6 @@ def porterSpeech(speechQueue,pExitFlag):
 
         #time.sleep(0.1)
 
-    logging.info("exiting speech")
     engine.say("Shutting down")
     engine.runAndWait()
 
@@ -1195,6 +1294,7 @@ def cmdToDestination(inputCommand):
 if __name__ == '__main__':
 
     multiprocessing.freeze_support()
+
     mpManager = multiprocessing.Manager()
 
     wheelSpeeds = mpManager.list([0, 0])
@@ -1204,8 +1304,10 @@ if __name__ == '__main__':
     qrDic = mpManager.dict()
     vpDict = mpManager.dict()
 
+    #dataInput = raw_input("Start System... ? (y/n)")
     logging.info("Starting system...")
     sysRunning = True
+    #dataInput = ""
 
     #Start Speech Process
     logging.info("Starting speech Process...")

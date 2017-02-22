@@ -116,7 +116,7 @@ void draw() {
           rightWheel.setData(timeSeries, rightSpeeds);
 
           porterOrientation = degrees(Float.parseFloat(tokens[18]));
-          wheelOrientation = degrees(Float.parseFloat(tokens[24]));
+          wheelOrientation = degrees(Float.parseFloat(tokens[23]));
           targetLocation[0] = Integer.parseInt(tokens[11]);
           targetLocation[1] = Integer.parseInt(tokens[12]);
           porterLocation_Global[0] = Float.parseFloat(tokens[13]);
