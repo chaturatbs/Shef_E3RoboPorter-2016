@@ -12,21 +12,31 @@ Serial usPort;
 Serial mPort;
 
 int[] porter_ctr = new int[2];
-int[] sense_c = new int[2];
-int[] sense_fl = new int[2];
-int[] sense_fr = new int[2];
-int[] sense_l = new int[2];
-int[] sense_r = new int[2];
-int[] sense_b = new int[2];
+int[] sense_fc = new int[2]; //location of f_ctr sensor
+int[] sense_fl = new int[2]; //location of f_l sensor
+int[] sense_fr = new int[2]; //location of f_r sensor
+int[] sense_l = new int[2]; //location of l_m sensor
+int[] sense_r = new int[2]; //location of r_m sensor
+int[] sense_b = new int[2]; //location of b_ctr sensor
+
+int[] sense_ft = new int[2]; //location of f_top sensor
+int[] sense_lf = new int[2]; //location of l_f sensor
+int[] sense_rf = new int[2]; //location of r_f sensor
+int[] sense_lb = new int[2]; //location of l_b sensor
+int[] sense_rb = new int[2]; //location of r_b sensor
+int[] sense_bl = new int[2]; //location of b_l sensor
+int[] sense_br = new int[2]; //location of b_r sensor
+
+
 float sensorAngle = 0.3;
 
 float dispScale = 1;
-int[] distances = new int[6];
+int[] distances = new int[13];
 int inByte = 0;
 int lf = 10;
 String inBuffer = "";
 String delims = "[,]+";
-float[] AvgDistances = new float[6];
+float[] AvgDistances = new float[13];
 int nAvg = 15;
 
 float[] lastPos = new float[2];
@@ -34,6 +44,7 @@ float[] lastPos = new float[2];
 BarChart barChart;
 
 float[] speeds = new float[2];
+float[] dmdSpeeds = new float[2];
 float[] AvgSpeeds = new float[2];
 
 float [] leftSpeeds = new float[40];
@@ -55,6 +66,8 @@ XYChart leftWheel;
 XYChart rightWheel;
 
 
+//should combine the following 2 functions... spaghetti code much? -_-
+
 void dataShiftBack(float left, float right){
   for (int i = 0; i < leftSpeeds.length-1; i++) {
     leftSpeeds[i] = leftSpeeds[i+1];
@@ -65,6 +78,18 @@ void dataShiftBack(float left, float right){
   rightSpeeds[rightSpeeds.length-1] = right;
   timeSeries[timeSeries.length-1] = timeSeries[timeSeries.length-2] + 1;
 }
+
+void shiftBackDemandedSpeeds(float left, float right){
+  for (int i = 0; i < leftSpeeds.length-1; i++) {
+    demandedSpeedL[i] = leftSpeeds[i+1];
+    demandedSpeedR[i] = rightSpeeds[i+1];
+    //timeSeries[i] = timeSeries[i+1];
+  }
+  demandedSpeedL[demandedSpeedL.length-1] = left;
+  demandedSpeedR[demandedSpeedR.length-1] = right;
+  //timeSeries[timeSeries.length-1] = timeSeries[timeSeries.length-2] + 1;
+}
+
 
 void setup() {
   size(100, 100);
@@ -99,10 +124,17 @@ void draw() {
         println(inBuffer);
         String[] tokens = inBuffer.split(delims);
         //println(tokens.length);
-        if (tokens.length == 24){
+        if (tokens.length == 31){
+
           for (int i = 0; i < 6; i++) {
              distances[i] = int(Float.parseFloat(tokens[i+1]));
           }
+          for (int i = 0; i < 7; i++) {
+             distances[i+6] = int(Float.parseFloat(tokens[i+24]));
+          }
+
+          dmdSpeeds[0] = Float.parseFloat(tokens[7]);
+          dmdSpeeds[1] = Float.parseFloat(tokens[8]);
 
           speeds[0] = Float.parseFloat(tokens[9]);
           speeds[1] = Float.parseFloat(tokens[10]);
@@ -114,6 +146,8 @@ void draw() {
           leftWheel.setMaxX(max(timeSeries));
           rightWheel.setMaxX(max(timeSeries));
           rightWheel.setData(timeSeries, rightSpeeds);
+
+          //shiftBackDemandedSpeeds
 
           porterOrientation = degrees(Float.parseFloat(tokens[18]));
           wheelOrientation = degrees(Float.parseFloat(tokens[23]));
@@ -143,37 +177,64 @@ public class USapplet extends PApplet {
   public void settings() {
     size(400, 400);
   }
-  
+
   public void setup(){
     surface.setLocation(410, 310);
-    
+
     int size_x = (int)(400*dispScale);
     int size_y = (int)(400*dispScale);
-    
+
     porter_ctr[0] = size_x/2;
     porter_ctr[1] = size_y/2;
 
-    sense_c[0] = porter_ctr[0];
-    sense_c[1] = (int)(porter_ctr[1]-36*dispScale);
+    sense_fc[0] = porter_ctr[0];
+    sense_fc[1] = (int)(porter_ctr[1]-36*dispScale);
 
     sense_b[0] = porter_ctr[0];
     sense_b[1] = (int)(porter_ctr[1]+36*dispScale);
 
-    sense_fl[0] =  (int)(sense_c[0]-36*dispScale);
-    sense_fl[1] =  sense_c[1];
+    sense_fl[0] =  (int)(sense_fc[0]-36*dispScale);
+    sense_fl[1] =  sense_fc[1];
 
-    sense_fr[0] = (int)(sense_c[0]+36*dispScale);
-    sense_fr[1] =  sense_c[1];
+    sense_fr[0] = (int)(sense_fc[0]+36*dispScale);
+    sense_fr[1] =  sense_fc[1];
 
     sense_l[0] = sense_fl[0];
     sense_l[1] = porter_ctr[1];
 
     sense_r[0] = sense_fr[0];
     sense_r[1] = porter_ctr[1];
+
+    //---------------------
+    sense_ft[0] = porter_ctr[0];
+    sense_ft[1] = (int)(porter_ctr[1]-24*dispScale);
+
+    sense_lf[0] = (int)(sense_fl[0]-8*dispScale);
+    sense_lf[1] = (int)(sense_l[1]-24*dispScale);
+
+    sense_rf[0] = (int)(sense_fr[0]);
+    sense_rf[1] = (int)(sense_r[1]-24*dispScale);
+
+    sense_lb[0] = (int)(sense_fl[0]-8*dispScale);
+    sense_lb[1] = (int)(sense_l[1]+36*dispScale);
+    //
+    sense_rb[0] = sense_fr[0];
+    sense_rb[1] = (int)(sense_r[1]+36*dispScale);
+    //
+    sense_bl[0] = (int)(sense_fc[0]-36*dispScale);
+    sense_bl[1] =  (int)(porter_ctr[1]+46*dispScale);
+    //
+    sense_br[0] = (int)(sense_fc[0]+28*dispScale);
+    sense_br[1] = (int)(porter_ctr[1]+46*dispScale);
+
   }
 
   public void draw() {
+
+    //draw background
     background(240);
+
+    //draw the outline of the robot
     fill(120);
     rect(porter_ctr[0]-36*dispScale, porter_ctr[1]-36*dispScale, 71*dispScale, 71*dispScale);
     strokeWeight(3);
@@ -181,24 +242,45 @@ public class USapplet extends PApplet {
     line(porter_ctr[0]-45*dispScale, porter_ctr[1]+20*dispScale,porter_ctr[0]+45*dispScale, porter_ctr[1]+20*dispScale);
     strokeWeight(1);
 
+    //calculate the average US value
     mAverage(nAvg);
 
+    //draw the sensor arcs
     fill(200);
-    arc(sense_c[0], sense_c[1], AvgDistances[0]*dispScale,  AvgDistances[0]*dispScale, -sensorAngle-HALF_PI, sensorAngle-HALF_PI, PIE);
+    arc(sense_fc[0], sense_fc[1], AvgDistances[0]*dispScale,  AvgDistances[0]*dispScale, -sensorAngle-HALF_PI, sensorAngle-HALF_PI, PIE);
     arc(sense_b[0], sense_b[1],  AvgDistances[5]*dispScale,  AvgDistances[5]*dispScale, -sensorAngle+HALF_PI, sensorAngle+HALF_PI, PIE);
     arc(sense_fl[0], sense_fl[1],  AvgDistances[1]*dispScale,  AvgDistances[1]*dispScale, -sensorAngle-HALF_PI, sensorAngle-HALF_PI, PIE);
     arc(sense_fr[0], sense_fr[1],  AvgDistances[2]*dispScale,  AvgDistances[2]*dispScale, -sensorAngle-HALF_PI, sensorAngle-HALF_PI, PIE);
     arc(sense_l[0], sense_l[1],  AvgDistances[3]*dispScale,  AvgDistances[3]*dispScale, -sensorAngle-PI, sensorAngle-PI, PIE);
     arc(sense_r[0], sense_r[1],  AvgDistances[4]*dispScale,  AvgDistances[4]*dispScale, -sensorAngle, sensorAngle, PIE);
 
+    //fill(0, 102, 153);
+    arc(sense_ft[0], sense_ft[1], AvgDistances[6]*dispScale,  AvgDistances[6]*dispScale, -sensorAngle-HALF_PI, sensorAngle-HALF_PI, PIE);
+    arc(sense_lf[0], sense_lf[1],  AvgDistances[7]*dispScale,  AvgDistances[7]*dispScale, -sensorAngle-PI, sensorAngle-PI, PIE);
+    arc(sense_rf[0], sense_rf[1],  AvgDistances[8]*dispScale,  AvgDistances[8]*dispScale, -sensorAngle, sensorAngle, PIE);
+    arc(sense_lb[0], sense_lb[1],  AvgDistances[9]*dispScale,  AvgDistances[9]*dispScale, -sensorAngle-PI, sensorAngle-PI, PIE);
+    arc(sense_rb[0], sense_rb[1],  AvgDistances[10]*dispScale,  AvgDistances[10]*dispScale, -sensorAngle, sensorAngle, PIE);
+    arc(sense_bl[0], sense_bl[1],  AvgDistances[11]*dispScale,  AvgDistances[11]*dispScale, -sensorAngle+HALF_PI, sensorAngle+HALF_PI, PIE);
+    arc(sense_br[0], sense_br[1],  AvgDistances[12]*dispScale,  AvgDistances[12]*dispScale, -sensorAngle+HALF_PI, sensorAngle+HALF_PI, PIE);
+
+    //write the text values
     textSize(12);
     fill(0, 102, 153);
-    text((int)AvgDistances[0], sense_c[0], sense_c[1]);
+    text((int)AvgDistances[0], sense_fc[0], sense_fc[1]);
     text((int)AvgDistances[1], sense_fl[0], sense_fl[1]);
     text((int)AvgDistances[2], sense_fr[0], sense_fr[1]);
     text((int)AvgDistances[3], sense_l[0], sense_l[1]);
     text((int)AvgDistances[4], sense_r[0], sense_r[1]);
     text((int)AvgDistances[5], sense_b[0], sense_b[1]);
+
+    fill(10, 200, 53);
+    text((int)AvgDistances[6], sense_ft[0], sense_ft[1]);
+    text((int)AvgDistances[7], sense_lf[0], sense_lf[1]);
+    text((int)AvgDistances[8], sense_rf[0], sense_rf[1]);
+    text((int)AvgDistances[9], sense_lb[0], sense_lb[1]);
+    text((int)AvgDistances[10], sense_rb[0], sense_rb[1]);
+    text((int)AvgDistances[11], sense_bl[0], sense_bl[1]);
+    text((int)AvgDistances[12], sense_br[0], sense_br[1]);
   }
 }
 
@@ -209,9 +291,9 @@ public class SpeedApplet extends PApplet {
     size(600,280);
   }
   public void setup() {
-    
+
     surface.setLocation(0, 0);
-    
+
     leftWheel = new XYChart(this);
     rightWheel = new XYChart(this);
 
@@ -221,7 +303,7 @@ public class SpeedApplet extends PApplet {
     // Axis formatting and labels.
     leftWheel.showXAxis(true);
     leftWheel.showYAxis(true);
-   
+
     leftWheel.setMinY(-30);
     rightWheel.setMinY(-30);
 
@@ -249,7 +331,7 @@ public class SpeedApplet extends PApplet {
     textSize(12);
     try {
       leftWheel.draw(15,15,width-30,height-30);
-      rightWheel.draw(37,5,width-67,height-30);
+      rightWheel.draw(37,23,width-67,height-53);
     } catch (NullPointerException e){
     }
 
@@ -267,7 +349,7 @@ public class OrientationApplet extends PApplet {
 
   private float x = 0;
   private float y = 0;
-    
+
   public void settings() {
     size(400, 400);
   }
@@ -310,7 +392,7 @@ public class OrientationApplet extends PApplet {
     stroke(50,50,200);
     strokeWeight(3);
     line(200, 200, 200-x, 200-y);
-    
+
     x = 0;
     y = 0;
 
@@ -333,7 +415,7 @@ public class PositionApplet extends PApplet {
   public void setup(){
     positionPlot = new GPlot(this);
     targetPlot = new GPlot(this);
-    
+
     surface.setLocation(820, 310);
 
     positionPlot.setDim(new float[] {400, 300});
@@ -347,7 +429,7 @@ public class PositionApplet extends PApplet {
     positionPlot.getLayer("tgt").setPointColor(color(100, 255, 100));
     positionPlot.getLayer("tgt").setLineColor(color(50, 50, 50));
     //positionPlot.setPointColor(color(10, 10, 255));
-    
+
 
 //    targetPlot.setDim(new float[] {400, 400});
 //    targetPlot.setPointColor(color(100, 255, 100));

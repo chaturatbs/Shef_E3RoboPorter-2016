@@ -18,6 +18,7 @@ import random
 import pyttsx
 import math
 import multiprocessing
+import glob
 
 from sys import platform
 #if on linux, import functions for IMU and ip
@@ -56,7 +57,8 @@ dataReady = False
 
 ##--Serial Connections
 global MotorConn #serial handle for the motor controller
-global USConn #serial handle for the Ultrasonic controller
+global USConn1 #serial handle for the Ultrasonic controller 1
+global USConn2 #serial handle for the Ultrasonic controller 2
 
 ##--Safety
 global safetyOn #Boolean for the state of the safety toggle (used only in manual control)
@@ -66,9 +68,10 @@ safetyOn = True
 global USAvgDistances #vector holding the average US distances
 global obstruction #Boolean for comminicating whether there is an obstruction in the direction of travel
 
-USAvgDistances = [0., 0., 0., 0., 0., 0.]
+#F_bot, F_left, F_right, L_mid, R_mid, B_mid - F_top, L_front, R_front, L_back, R_back, B_left, B_right
+USAvgDistances = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 obstruction = False
-USThresholds = [50, 30, 30] #threasholds for treating objects as obstacles [front,side,back]
+USThresholds = [50, 40, 40] #threasholds for treating objects as obstacles [front,side,back]
 
 ##--Multi-Threading/Muti-processing
 global threadLock #lock to be used when changing global variables
@@ -109,31 +112,102 @@ global porterLocation_Local #vector holding local location [x,y] in cm
 global porterOrientation #angle from north (between -180,180) in degrees
 global targetDestination  #Target location in global coordinates in cm
 global distanceToGoal #Distance to goal in cm
-
+global porterLocation_IMU
 targetDestination = [0,0]
 
 porterOrientation = multiprocessing.Value('d',0.0)  # from north heading (in degrees?)
 distanceToGoal = 0
 
-orientationIMU = 0.
+orientationIMU = multiprocessing.Value("d", 0.0)
 orientationWheels = multiprocessing.Value("d", 0.0)
 
 ##-System State Variables
 localCtrl = True #Local control = commands sent through SSH not TCP/IP
 sysRunning = False #
 cmdExpecting = False #
-exitFlag = False #set exitFlag = True initiate system shutdown
+#exitFlag = False #set exitFlag = True initiate system shutdown
 dataInput = "" #Data string from the user (SSH/TCP)
 
-pExitFlag = multiprocessing.Value('b', False) #multiprocessing Exit flag (can be combined with the others)
+exitFlag = multiprocessing.Value('b', False) #multiprocessing Exit flag (can be combined with the others)
+
+global motor_portAddr
+global US1_portAddr
+global US2_portAddr
+
+motor_portAddr = ""
+US1_portAddr = ""
+US2_portAddr = ""
 
 #function to set exit flags
+
+def serialDetect():
+#This fuction will ping all serial connections to find out what each device is
+
+
+    global motor_portAddr
+    global US1_portAddr
+    global US2_portAddr
+
+    if platform.startswith('win'):
+        ports = ['COM%s' % (i + 1) for i in range(256)]
+        print "ports are " + ports
+    elif platform == "linux" or platform == "linux2":
+        #check this
+        ports = glob.glob('/dev/tty[A-Za-z]*')
+        print "ports are " + ports
+    else:
+        logging.error("Unsupported Platform")
+
+    for port in ports:
+        try:
+            testConn = serial.Serial(port, 19200)
+            logging.info('Checking device at ', port)
+            testConn.write("whois?\n")
+            response = testConn.readline()
+            if response == "motor\n":
+                logging.info('Motor Controller at ', port)
+                motor_portAddr = port
+            elif response == "us1\n":
+                logging.info('US 1 at ', port)
+                US1_portAddr = port
+            elif response == "us2\n":
+                logging.info('US 2 at ', port)
+                US2_portAddr = port
+        except Exception as e:
+            logging.error("Error Checking Serial ports - %s", e)
+
+def ConnectToSerial():
+    global MotorConn
+    global USConn1
+    global USConn2
+
+    serialDetect()
+
+    logging.info("Trying to connect to Serial Devices")
+    if motor_portAddr != "":
+        try:
+            MotorConn = serial.Serial(motor_portAddr, 19200)
+        except Exception as e:
+            logging.error("%s", e)
+
+    if US1_portAddr != "":
+        try:
+            USConn1 = serial.Serial(US1_portAddr, 19200)
+        except Exception as e:
+            logging.error("%s", e)
+
+    if US2_portAddr != "":
+        try:
+            USConn2 = serial.Serial(US2_portAddr, 19200)
+        except Exception as e:
+            logging.error("%s", e)
+
 def setExitFlag(status):
     global exitFlag
-    global pExitFlag
+    global exitFlag
 
     exitFlag = status
-    pExitFlag.value = status
+    exitFlag.value = status
 
 ###---Class Definitions
 # create a class for the data to be sent over ait
@@ -176,7 +250,7 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
 
 ##----------IMU process
 
-def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue, speechQueue):
+def porterTracker(exitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue, speechQueue):
 
     AHRSmode = "imu"  # can be imu or wheel. Defaults to wheel
     pulseData = ["", ""]  # pulses counted by the motor controller
@@ -208,7 +282,7 @@ def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation,
             logging.debug("Recommended Poll Interval: %dmS\n" % poll_interval)
             logging.info("IMU is %s", str(imu))
 
-    while not pExitFlag.value:  # while the system isn't in shutdown mode
+    while not exitFlag.value:  # while the system isn't in shutdown mode
         if imuEnable.value:
             if imu.IMURead():  # if data is available from the IMU...
                 logging.debug("Reading IMU")
@@ -228,8 +302,8 @@ def porterTracker(pExitFlag,imuEnable, porterLocation_Global, porterOrientation,
                 pulseData[1] = int((pulseData[1][0]) + str(int("0x" + str(pulseData[1][1:]), 16)))
 
                 porterLocation_Global, wheelSpeeds, orientationWheels.value = movePorter(pulseData[0], pulseData[1], porterLocation_Global,porterOrientation,wheelSpeeds,orientationWheels)
-                # if AHRSmode is "wheel":
-                #     porterOrientation.value = orientationWheels.value
+                if AHRSmode is "wheel":
+                    porterOrientation.value = orientationWheels.value
 
             except Exception as e:
                 logging.error("%s", str(e))
@@ -265,8 +339,8 @@ def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelS
         # # r is the staight line distance traveled... so find x,y components
     #if lastCommand == "f":
 
-    porterLocation_Global[0] = porterLocation_Global[0] + r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
-    porterLocation_Global[1] = porterLocation_Global[1] + r * numpy.sin(numpy.pi/2 - porterOrientation.value)  # y component
+    porterLocation_Global[0] += r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
+    porterLocation_Global[1] += r * numpy.sin(numpy.pi/2 - porterOrientation.value)  # y component
 
     # elif lastCommand == "b":
     #     porterLocation_Global[0] = porterLocation_Global[0] - r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
@@ -296,8 +370,8 @@ class autoPilotThread(MultiThreadBase):
         self.beta = 10
 
         #Autopilot Control parameters
-        self.looping = False
-        self.obs = False
+        self.looping = True
+        self.obs = True
         self.distQuantise = 30  # path re-calculation distance
         self.autoSpeed = 10  # autopilot movement speed
         self.alignmentThreshold = 5  # alignment error in degrees
@@ -315,7 +389,7 @@ class autoPilotThread(MultiThreadBase):
         global targetDestination
         global autoPilot
 
-        while not exitFlag: #while the system isn't in shutdown mode
+        while not exitFlag.value: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
                 time.sleep(1) #...sleep for a bit ...zzzzzzz
             elif not imuEnable.value:
@@ -323,34 +397,46 @@ class autoPilotThread(MultiThreadBase):
                 speechQueue.put("IMU not available. Can't turn on Autopilot...")
                 autoPilot = False
             elif self.looping and self.obs:
-                porterLocation_Global = porterLocation_Local  # for now assume local position is the same as global
+                porterLocation_Global = [0,0]  # for now assume local position is the same as global
                 # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
                 logging.info("Iteratve Autopilot mode with Obstacle Avoidance")
                 speechQueue.put("Iteratve Autopilot mode with Obstacle Avoidance")  # vocalise
 
-                while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > 30:
+                self.dX = targetDestination[0] - porterLocation_Global[0]
+                self.dY = targetDestination[1] - porterLocation_Global[1]
+
+                while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > 30 and not exitFlag.value:
                 # find the angle of the goal from north
 
                     speechQueue.put("Quantising the environment")
                     logging.info("Quantising The environment")
+                    time.sleep(2)
 
                     self.hScores = self.checkquad()
 
                     if self.bestScoreIndex == 0:
                         speechQueue.put("Best way to go is forward")
+                        logging.info("Best way to go is forward")
                         self.moveStraight(dist=30,direction="f")
                     elif self.bestScoreIndex == 1:
                         speechQueue.put("Best way to go is backwards")
+                        logging.info("Best way to go is backwards")
                         self.moveStraight(dist=30, direction="b")
                     elif self.bestScoreIndex == 2:
                         speechQueue.put("Best way to go is left")
+                        logging.info("Best way to go is left")
                         self.turn(angleChange= -90)
                     elif self.bestScoreIndex == 3:
                         speechQueue.put("Best way to go is right")
+                        logging.info("Best way to go is right")
                         self.turn(angleChange= 90)
 
                     self.dX = targetDestination[0] - porterLocation_Global[0]
                     self.dY = targetDestination[1] - porterLocation_Global[1]
+
+                    if obstruction:
+                        time.sleep(5)
+                        speechQueue.put("sleeping for a bit")
 
                 speechQueue.put("Successfully arrived at the target")
                 logging.info("Successfully arrived at the target")
@@ -402,7 +488,7 @@ class autoPilotThread(MultiThreadBase):
                     if self.angleChange < -180:
                         self.angleChange += 360
 
-                    if autoPilot and not exitFlag:
+                    if autoPilot and not exitFlag.value:
                         with threadLock:
                             if self.angleChange > self.alignmentThreshold:
                                 lastCommand = "r"
@@ -414,7 +500,7 @@ class autoPilotThread(MultiThreadBase):
                                 dataReady = True
 
                     # wait till its aligned
-                    while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
+                    while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  # Add boundaries
                         # keep checking the angle
                         self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
                         if self.angleChange < -180:
@@ -445,7 +531,7 @@ class autoPilotThread(MultiThreadBase):
                     initLoc = porterLocation_Global
                     self.distTravelled = 0
 
-                    while (self.distTravelled < self.distQuantise) and autoPilot and not exitFlag: #change this to allow for looping the whole block from else till at goal.
+                    while (self.distTravelled < self.distQuantise) and autoPilot and not exitFlag.value: #change this to allow for looping the whole block from else till at goal.
                         # self.dX = targetDestination[0] - porterLocation_Global[0]
                         # self.dY = targetDestination[1] - porterLocation_Global[1]
                         # distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
@@ -470,7 +556,7 @@ class autoPilotThread(MultiThreadBase):
                     # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
 
                 # find the required angle change to align to global grid
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     logging.info("Looking for north")
                     speechQueue.put("Looking for north") #vocalise
                     time.sleep(1) #sleep for presentation purposes
@@ -481,7 +567,7 @@ class autoPilotThread(MultiThreadBase):
                 if self.angleChange > 180: # if >180 turn left instead of right
                     self.angleChange -= 360
 
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     with threadLock: #with exclusive global variable access...
                         if self.angleChange > self.alignmentThreshold: #if need to turn right
                             lastCommand = "r" #set the command to be right (for obstacle avoidance purposes)
@@ -493,7 +579,7 @@ class autoPilotThread(MultiThreadBase):
                             dataReady = True
 
                 # wait till its aligned
-                while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  #while not aligned
+                while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  #while not aligned
                     # keep calculating the angle change required
                     self.angleChange = 90 - numpy.rad2deg(porterOrientation.value)  # right if +ve left if -ve
                     if self.angleChange > 180:
@@ -507,7 +593,7 @@ class autoPilotThread(MultiThreadBase):
                     dataReady = True
 
                 # aligned to x axis... YAY!
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     speechQueue.put("Aligned to X axis")
                     logging.info("Aligned to X axis")
                     time.sleep(1)
@@ -544,7 +630,7 @@ class autoPilotThread(MultiThreadBase):
                 if self.angleChange < -180:
                     self.angleChange += 360
 
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     with threadLock:
                         if self.angleChange > self.alignmentThreshold:
                             lastCommand = "r"
@@ -555,13 +641,13 @@ class autoPilotThread(MultiThreadBase):
                             speedVector = [-self.autoSpeed, self.autoSpeed]
                             dataReady = True
 
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     speechQueue.put("Looking for the target destination")
                     logging.info("Looking for the target destination")
                     time.sleep(1)
 
                 # wait till its aligned
-                while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag:  # Add boundaries
+                while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  # Add boundaries
                     # keep checking the angle
                     self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
                     if self.angleChange < -180:
@@ -574,7 +660,7 @@ class autoPilotThread(MultiThreadBase):
                     speedVector = [0, 0]
                     dataReady = True
                     # aligned to x axis
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     speechQueue.put("Aligned to the target destination")
                     logging.info("Aligned to the target destination")
                     time.sleep(1)
@@ -582,7 +668,7 @@ class autoPilotThread(MultiThreadBase):
                 # find distance to Goal
                 distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
                 # move to destination
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     speechQueue.put("Moving to the target")
                     logging.info("Moving to Target")
 
@@ -592,7 +678,7 @@ class autoPilotThread(MultiThreadBase):
                 #     speedVector = [self.autoSpeed, self.autoSpeed]
                 #     dataReady = True
 
-                # while (distanceToGoal > 30) and autoPilot and not exitFlag: #change this to allow for looping the whole block from else till at goal.
+                # while (distanceToGoal > 30) and autoPilot and not exitFlag.value: #change this to allow for looping the whole block from else till at goal.
                 #     self.dX = targetDestination[0] - porterLocation_Global[0]
                 #     self.dY = targetDestination[1] - porterLocation_Global[1]
                 #     distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
@@ -602,7 +688,7 @@ class autoPilotThread(MultiThreadBase):
                     speedVector = [0, 0]
                     dataReady = True
 
-                if autoPilot and not exitFlag:
+                if autoPilot and not exitFlag.value:
                     speechQueue.put("Successfully arrived at the target")
                     logging.info("Successfully arrived at the target")
                     autoPilot = False #turn off autopilot at the end of the maneuver
@@ -614,7 +700,7 @@ class autoPilotThread(MultiThreadBase):
 
         initOrientation = numpy.rad2deg(porterOrientation.value)
 
-        if autoPilot and not exitFlag:
+        if autoPilot and not exitFlag.value and not obstruction:
             with threadLock:
                 if angleChange > self.alignmentThreshold:
                     lastCommand = "r"
@@ -625,7 +711,7 @@ class autoPilotThread(MultiThreadBase):
                     speedVector = [-self.autoSpeed, self.autoSpeed]
                     dataReady = True
 
-        while (abs(initOrientation - numpy.rad2deg(porterOrientation.value)) < (abs(angleChange) + self.alignmentThreshold)) and autoPilot and not exitFlag:  # while not aligned
+        while (abs(initOrientation - numpy.rad2deg(porterOrientation.value)) < (abs(angleChange) + self.alignmentThreshold)) and autoPilot and not exitFlag.value and not obstruction:  # while not aligned
             time.sleep(0.01)  # sleep a bit so that the CPU isnt overloaded
 
         # stop turning
@@ -653,7 +739,7 @@ class autoPilotThread(MultiThreadBase):
         initLoc = porterLocation_Global
         self.distTravelled = 0
 
-        while (self.distTravelled < dist) and autoPilot and not exitFlag:  # change this to allow for looping the whole block from else till at goal.
+        while (self.distTravelled < dist) and autoPilot and not exitFlag.value and not obstruction:  # change this to allow for looping the whole block from else till at goal.
             self.dX = porterLocation_Global[0] - initLoc[0]
             self.dY = porterLocation_Global[1] - initLoc[1]
             self.distTravelled = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
@@ -688,20 +774,18 @@ class autoPilotThread(MultiThreadBase):
             tempDist = numpy.sqrt(numpy.square(tempDX) + numpy.square(tempDY))
             distScore.append(tempDist)
 
-        print("dist score is " + str(distScore))
-        print("min dist score is " + str(min(distScore)) + " and its at " +
+        print("dist score is " + str(distScore) + "min dist score is " + str(min(distScore)) + " at " +
               str(distScore.index(min(distScore))))
 
-        return distScore.index(min(distScore))
+        return distScore
 
     def envCheck(self):
         #self.envScore = []
 
-        envScore = [min(USAvgDistances[:2]),USAvgDistances[3],USAvgDistances[4],USAvgDistances[5]]
+        envScore = [USAvgDistances[0],USAvgDistances[5],USAvgDistances[3],USAvgDistances[4]]
         #map this non-linearly
 
-        print("environment score is " + str(envScore))
-        print("max env score is " + str(max(envScore)) + " and its at " +
+        print("environment score is " + str(envScore) + " max env score is " + str(max(envScore)) + " at " +
               str(envScore.index(max(envScore))))
 
         return envScore
@@ -749,7 +833,7 @@ class debugThread(MultiThreadBase):
 
     def run(self):
         logging.info("Starting %s", self.name)
-        while not exitFlag:
+        while not exitFlag.value:
             self.loopStartFlag()
             if not self.debugServer:
                 self.runServer()
@@ -804,7 +888,15 @@ class debugThread(MultiThreadBase):
                     # data status
                     self.clientConnection.send(str(dataReady)+",") #22
 
-                    self.clientConnection.send(str(orientationWheels.value))  # 23
+                    self.clientConnection.send(str(orientationWheels.value) + ",")  # 23
+
+                    self.clientConnection.send(str(USAvgDistances[6]) + ",")  # 24
+                    self.clientConnection.send(str(USAvgDistances[7]) + ",")
+                    self.clientConnection.send(str(USAvgDistances[8]) + ",")
+                    self.clientConnection.send(str(USAvgDistances[9]) + ",")
+                    self.clientConnection.send(str(USAvgDistances[10]) + ",")
+                    self.clientConnection.send(str(USAvgDistances[11]) + ",")
+                    self.clientConnection.send(str(USAvgDistances[12]) )  # 30
 
                     self.clientConnection.send("\n")
                     # self.logOverNetwork()
@@ -898,21 +990,34 @@ class motorDataThread(MultiThreadBase):
         self.lastRandomCode = "R"
         self.inputBuf = ""
         self.pulses = ["",""]
+        self.obs = True
 
     def run(self):
         global speedVector
         global threadLock
         global dataReady
-        global USConn
+        global USConn1
         global obstruction
         global pulsesQueue
 
         logging.info("Starting %s", self.name)
-        while not exitFlag:
+        while not exitFlag.value:
             self.loopStartFlag()
 
             if obstruction:
-                if autoPilot:
+                if autoPilot and self.obs:
+                    if lastSent != [0, 0]:  # ie still moving
+                        # pause motion
+                        logging.info("Obstacle Detected. Path needs to be recalculated")
+                        speechQueue.put("Obstacle Detected. Path needs to be recalculated")
+                        self.send_serial_data([0, 0])
+                    # else:
+                    #     while obstruction:
+                    #         time.sleep(0.1)
+                    #     speechQueue.put("Obstacle removed. Proceeding to destination")
+                    #     logging.info("Obstacle removed. Proceeding to destination")
+                    #     self.send_serial_data(speedVector)
+                elif autoPilot:
                     logging.info("autopilot command to motor")
                     if lastSent != [0, 0]:  # ie still moving
                         # pause motion
@@ -957,7 +1062,7 @@ class motorDataThread(MultiThreadBase):
                             if dataReady != False:
                                 with threadLock:
                                     dataReady = False
-                    elif (safetyOn and not USConn.closed):
+                    elif (safetyOn and not USConn1.closed):
                         try:
                             logging.info("Trying to send data")
                             self.send_serial_data(speedVector)
@@ -1066,7 +1171,9 @@ class usDataThread(MultiThreadBase):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.rawUSdata = [0., 0., 0., 0., 0., 0.]
+        self.rawUSdata_1 = [0., 0., 0., 0., 0., 0.]
+        self.rawUSdata_2 = [0., 0., 0., 0., 0., 0., 0.]
+
         self.inputBuf = ""
         self.errorCount = 0
         self.profiling = False
@@ -1075,7 +1182,7 @@ class usDataThread(MultiThreadBase):
         global speedVector
 
         logging.info("Starting")
-        while not exitFlag:
+        while not exitFlag.value:
             try:
                 self.getUSvector()
                 self.mAverage(5)
@@ -1083,13 +1190,22 @@ class usDataThread(MultiThreadBase):
             except Exception as e:
                 self.errorCount += 1
                 logging.error("%s", str(e))
-                if USConn.closed:
+                if USConn1.closed:
                     try:
-                        logging.debug("Trying to open serial port")
-                        USConn.open()
+                        logging.debug("Trying to open US1 serial port ")
+                        USConn1.open()
                     except Exception as e:
                         self.errorCount += 1
-                        logging.error("Trying to open Ultrasonic port - %s", str(e))
+                        logging.error("Trying to open Ultrasonic port 1 - %s", str(e))
+                        logging.info("No Ultrasonic comms... Looping Back...")
+
+                if USConn2.closed:
+                    try:
+                        logging.debug("Trying to open US2 serial port")
+                        USConn2.open()
+                    except Exception as e:
+                        self.errorCount += 1
+                        logging.error("Trying to open Ultrasonic port 2 - %s", str(e))
                         logging.info("No Ultrasonic comms... Looping Back...")
 
             if self.errorCount > 3:
@@ -1113,9 +1229,14 @@ class usDataThread(MultiThreadBase):
         logging.debug("inside getUSVector")
         try:
             logging.debug("Trying to get US data")
-            self.inputBuf = USConn.readline()
+            self.inputBuf = USConn1.readline()
             self.inputBuf.rstrip("\n\r")
-            self.rawUSdata = self.inputBuf.split(",")
+            self.rawUSdata_1 = self.inputBuf.split(",")
+
+            self.inputBuf = USConn2.readline()
+            self.inputBuf.rstrip("\n\r")
+            self.rawUSdata_2 = self.inputBuf.split(",")
+
         except Exception as e:
             self.errorCount += 1
             logging.error("%s", str(e))
@@ -1124,10 +1245,12 @@ class usDataThread(MultiThreadBase):
         global USAvgDistances
         global threadLock
         i = 0
-        if len(self.rawUSdata) == 6:
+        rawUSdata = self.rawUSdata_1 + self.rawUSdata_2
+
+        if len(rawUSdata) == 13:
             with threadLock:
                 for i in range(0, len(USAvgDistances)):
-                    USAvgDistances[i] += (int(self.rawUSdata[i]) - USAvgDistances[i]) / n
+                    USAvgDistances[i] += (int(rawUSdata[i]) - USAvgDistances[i]) / n
                 if self.profiling:
                     print ("\t" + self.name + " Avg Vector - " + str(USAvgDistances))
 
@@ -1188,13 +1311,32 @@ class usDataThread(MultiThreadBase):
             self.errorCount += 1
             logging.error("%s", str(e))
 
-def porterSpeech(speechQueue,pExitFlag):
+class ttsThread(MultiThreadBase): #text to speech thread
+    def run(self):
+
+        #initialise speech engine
+        engine = pyttsx.init()
+        rate = engine.getProperty('rate')
+        engine.setProperty('rate', rate - 50)
+
+        while not exitFlag.value:
+            #talk while there are things to be said
+            if not speechQueue.empty():
+                engine.say(speechQueue.get())
+                engine.runAndWait()
+            else:
+                time.sleep(0.5)
+
+        engine.say("Shutting down")
+        engine.runAndWait()
+
+def porterSpeech(speechQueue,exitFlag):
     # initialise speech engine
     engine = pyttsx.init()
     rate = engine.getProperty('rate')
     engine.setProperty('rate', rate - 50)
 
-    while not pExitFlag.value:
+    while not exitFlag.value:
         # talk while there are things to be said
         if not speechQueue.empty():
             engine.say(speechQueue.get())
@@ -1274,13 +1416,13 @@ def get_ip_address(ifname):
         logging.error("Not linux... cant find ipAddress")
 
 def cmdToDestination(inputCommand):
-    validateBuffer = [0,0]
+    #validateBuffer = [0,0]
 
     if len(inputCommand) > 4:
         try:
             inputCommand.rstrip("\n")
             validateBuffer = str(inputCommand[1:len(inputCommand)]).split(",")
-            return validateBuffer
+            return int(validateBuffer[0]), int(validateBuffer[0])
         except Exception as e:
             logging.error("%s", e)
     else:
@@ -1300,20 +1442,24 @@ if __name__ == '__main__':
     wheelSpeeds = mpManager.list([0, 0])
     porterLocation_Global = mpManager.list([0, 0])  # set location to "undefined"
     porterLocation_Local = mpManager.list([0, 0])
+    porterLocation_IMU = mpManager.list([0,0])
 
     qrDic = mpManager.dict()
     vpDict = mpManager.dict()
 
-    #dataInput = raw_input("Start System... ? (y/n)")
     logging.info("Starting system...")
     sysRunning = True
-    #dataInput = ""
 
-    #Start Speech Process
-    logging.info("Starting speech Process...")
-    speechProcess = multiprocessing.Process(target=porterSpeech,name="Speech Process",args=(speechQueue,pExitFlag,))
-    speechProcess.start()
-    processes.append(speechProcess)
+    # #Start Speech Process
+    # logging.info("Starting speech Process...")
+    # speechProcess = multiprocessing.Process(target=porterSpeech,name="Speech Process",args=(speechQueue,exitFlag,))
+    # speechProcess.start()
+    # processes.append(speechProcess)
+
+    logging.info("Starting speech Thread...")
+    speechThread = ttsThread(2, "Speech Thread")
+    speechThread.start()
+    threads.append(speechThread)
 
     speechQueue.put("initialising")
     #time.sleep(2)
@@ -1321,7 +1467,7 @@ if __name__ == '__main__':
 
     #Start IMU data Process
     logging.info("Starting Porter Tracker")
-    trackerProcess = multiprocessing.Process(name="IMU Process",target=porterTracker, args=(pExitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue,speechQueue,))
+    trackerProcess = multiprocessing.Process(name="IMU Process",target=porterTracker, args=(exitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue,speechQueue,))
     trackerProcess.start()
     processes.append(trackerProcess)
     speechQueue.put("Tracker Running")
@@ -1347,7 +1493,6 @@ if __name__ == '__main__':
     # setup serial connection to motor controller
     logging.info("Trying to connect to serial devices")
     dataInput = raw_input("Connect to motor Controller... ? (y/n)")
-
     if dataInput == "y": #if user wants to connect to the motor controller...
         dataInput = "" #Reset the variable
         logging.info("Trying to connect to motor controller")
@@ -1372,17 +1517,18 @@ if __name__ == '__main__':
         logging.info("Trying to connect to Ultrasonic controller")
         try:
             if (platform == "linux") or (platform == "linux2"):
-                USConn = serial.Serial('/dev/ttyACM1', 19200)
+                USConn1 = serial.Serial('/dev/ttyACM1', 19200)
+                USConn2 = serial.Serial('/dev/ttyACM2', 19200)
             elif (platform == "win32"):
-                USConn = serial.Serial('COM3', 19200)
+                USConn1 = serial.Serial('COM3', 19200)
 
-            logging.info("Connected to Ultrasonic sensors at %s", str(USConn))
+            logging.info("Connected to Ultrasonic sensors at %s", str(USConn1))
             USthread = usDataThread(5, "Ultrasonic thread")
             USthread.start()
             threads.append(USthread)
             # speechQueue.put("Ultrasonic Sensors Connected")
         except Exception as e:
-            print ('Unable to establish serial comms to port /dev/ttyACM1')
+            print ('Unable to establish serial comms to US device')
             logging.error("%s", str(e))
             # USConnected = False
 
@@ -1500,8 +1646,7 @@ if __name__ == '__main__':
                             if dataReady != False:
                                 with threadLock:
                                     dataReady = False
-
-                    elif dataInput[0] == "n" and autoPilot:
+                    elif dataInput[0] == "n" :
                         if not autoPilot:
                             logging.info("Turning ON Autopilot. Send letter 'a' for emergency stop")
                             speechQueue.put("Turning On Autopilot")
@@ -1509,6 +1654,7 @@ if __name__ == '__main__':
                             safetyOn = True
                             logging.info("Setting Destination")
                             targetDestination = cmdToDestination(dataInput)
+                            print ("Destination is " + str(targetDestination))
                             if dataReady != False:
                                 with threadLock:
                                     dataReady = False
@@ -1531,8 +1677,7 @@ if __name__ == '__main__':
             print ("Looping back to the start...")
 
 
-    exitFlag = True #instruct all the threads to close
-    pExitFlag.value = True
+    exitFlag.value = True #instruct all the threads to close
 
     if not localCtrl:
         logging.info("Shutting down the server at %s...", HOST)

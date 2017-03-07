@@ -1,5 +1,6 @@
 import processing.serial.*;
 import org.gicentre.utils.stat.*;    // For chart classes.
+//import org.gicentre.utils.multisketch.*;
 import grafica.*;
 import java.util.Random;
 
@@ -7,6 +8,8 @@ public GPlot positionPlot;
 public GPlot targetPlot;
 GPointsArray posPoints = new GPointsArray(10);
 GPointsArray tgtPoints = new GPointsArray(10);
+
+//public Random r;
 
 Serial usPort;
 Serial mPort;
@@ -33,7 +36,7 @@ float[] lastPos = new float[2];
 
 BarChart barChart;
 
-float[] speeds = new float[2];
+int[] speeds = new int[2];
 float[] AvgSpeeds = new float[2];
 
 float [] leftSpeeds = new float[40];
@@ -44,10 +47,9 @@ float [] demandedSpeedL = new float[40];
 float [] demandedSpeedR = new float[40];
 
 int [] targetLocation = new int[2];
-float [] porterLocation_Global = new float[2];
-float [] porterLocation_Local = new float[2];
+int [] porterLocation_Global = new int[2];
+int [] porterLocation_Local = new int[2];
 float porterOrientation = 0;
-float wheelOrientation = 0;
 float targetOrientation = 0;
 float porterYaw = 0;
 
@@ -55,7 +57,7 @@ XYChart leftWheel;
 XYChart rightWheel;
 
 
-void dataShiftBack(float left, float right){
+void dataShiftBack(int left, int right){
   for (int i = 0; i < leftSpeeds.length-1; i++) {
     leftSpeeds[i] = leftSpeeds[i+1];
     rightSpeeds[i] = rightSpeeds[i+1];
@@ -99,15 +101,15 @@ void draw() {
         println(inBuffer);
         String[] tokens = inBuffer.split(delims);
         //println(tokens.length);
-        if (tokens.length == 24){
+        if (tokens.length == 23){
           for (int i = 0; i < 6; i++) {
              distances[i] = int(Float.parseFloat(tokens[i+1]));
           }
 
-          speeds[0] = Float.parseFloat(tokens[9]);
-          speeds[1] = Float.parseFloat(tokens[10]);
+          speeds[0] = Integer.parseInt(tokens[7]);
+          speeds[1] = Integer.parseInt(tokens[8]);
 
-          dataShiftBack(speeds[0], speeds[1]);
+          dataShiftBack(speeds[1], speeds[0]);
           leftWheel.setData(timeSeries, leftSpeeds);
           leftWheel.setMinX(min(timeSeries));
           rightWheel.setMinX(min(timeSeries));
@@ -116,11 +118,11 @@ void draw() {
           rightWheel.setData(timeSeries, rightSpeeds);
 
           porterOrientation = degrees(Float.parseFloat(tokens[18]));
-          wheelOrientation = degrees(Float.parseFloat(tokens[23]));
+
           targetLocation[0] = Integer.parseInt(tokens[11]);
           targetLocation[1] = Integer.parseInt(tokens[12]);
-          porterLocation_Global[0] = Float.parseFloat(tokens[13]);
-          porterLocation_Global[1] = Float.parseFloat(tokens[14]);
+          porterLocation_Global[0] = Integer.parseInt(tokens[13]);
+          porterLocation_Global[1] = Integer.parseInt(tokens[14]);
         }
       }
     }
@@ -141,15 +143,9 @@ public class USapplet extends PApplet {
   }
 
   public void settings() {
-    size(400, 400);
-  }
-  
-  public void setup(){
-    surface.setLocation(410, 310);
-    
     int size_x = (int)(400*dispScale);
     int size_y = (int)(400*dispScale);
-    
+    size(400, 400);
     porter_ctr[0] = size_x/2;
     porter_ctr[1] = size_y/2;
 
@@ -209,9 +205,7 @@ public class SpeedApplet extends PApplet {
     size(600,280);
   }
   public void setup() {
-    
-    surface.setLocation(0, 0);
-    
+
     leftWheel = new XYChart(this);
     rightWheel = new XYChart(this);
 
@@ -221,9 +215,9 @@ public class SpeedApplet extends PApplet {
     // Axis formatting and labels.
     leftWheel.showXAxis(true);
     leftWheel.showYAxis(true);
-   
-    leftWheel.setMinY(-30);
-    rightWheel.setMinY(-30);
+
+    leftWheel.setMinY(0);
+    rightWheel.setMinY(0);
 
     leftWheel.setMaxY(100);
     rightWheel.setMaxY(100);
@@ -239,7 +233,7 @@ public class SpeedApplet extends PApplet {
     leftWheel.setPointSize(5);
     leftWheel.setLineWidth(1);
 
-    rightWheel.setPointColour(color(50,50,180,180));
+    rightWheel.setPointColour(color(50,50,180,100));
     rightWheel.setPointSize(5);
     rightWheel.setLineWidth(1);
   }
@@ -247,9 +241,10 @@ public class SpeedApplet extends PApplet {
   public void draw() {
     background(255);
     textSize(12);
+
     try {
       leftWheel.draw(15,15,width-30,height-30);
-      rightWheel.draw(37,5,width-67,height-30);
+      rightWheel.draw(30,5,width-60,height-30);
     } catch (NullPointerException e){
     }
 
@@ -265,15 +260,10 @@ public class SpeedApplet extends PApplet {
 
 public class OrientationApplet extends PApplet {
 
-  private float x = 0;
-  private float y = 0;
-    
   public void settings() {
     size(400, 400);
   }
-  public void setup(){
-    surface.setLocation(0, 310);
-  }
+
   public void draw() {
     background(240);
     fill(150);
@@ -285,21 +275,32 @@ public class OrientationApplet extends PApplet {
 
     //draw target
 
-    float dX = targetLocation[0] - porterLocation_Global[0];
-    float dY = targetLocation[1] - porterLocation_Global[1];
+    int dX = targetLocation[0] - porterLocation_Global[0];
+    int dY = targetLocation[1] - porterLocation_Global[1];
 
     if (dX != 0)
         targetOrientation = atan(dY / dX);
     else
-        targetOrientation = HALF_PI;
+        targetOrientation = PIE/ 2;
 
-    x = 130 * cos(targetOrientation+HALF_PI);
-    y = 130 * sin(targetOrientation+HALF_PI);
+    targetOrientation = radians(targetOrientation);
+    //porterOrientation = numpy.rad2deg(globalIMUFusion[2])
+
+
+    float x = 0;
+    float y = 0;
+
+    x = 130 * cos(radians(targetOrientation));
+    y = 130 * sin(radians(targetOrientation));
 
     stroke(50,200,50);
     strokeWeight(3);
     line(200, 200, 200-x, 200-y);
 
+    //if (targetLocation[0]>=0 && targetLocation[1]>=0) {
+    //  x = 130 * cos(angle - PIE/2);
+    //  y = 130 * sin(angle - PIE/2);
+    //}
     x = 0;
     y = 0;
 
@@ -310,53 +311,35 @@ public class OrientationApplet extends PApplet {
     stroke(50,50,200);
     strokeWeight(3);
     line(200, 200, 200-x, 200-y);
-    
-    x = 0;
-    y = 0;
-
-    x = 130 * cos(radians(wheelOrientation+90));
-    y = 130 * sin(radians(wheelOrientation+90));
-
-    //draw porter orientation
-    stroke(200,50,50);
-    strokeWeight(3);
-    line(200, 200, 200-x, 200-y);
   }
 }
 
 public class PositionApplet extends PApplet {
 
   public void settings() {
-    size(500, 400);
+    size(500, 500);
   }
 
   public void setup(){
     positionPlot = new GPlot(this);
     targetPlot = new GPlot(this);
-    
-    surface.setLocation(820, 310);
 
-    positionPlot.setDim(new float[] {400, 300});
+    positionPlot.setDim(new float[] {400, 400});
     positionPlot.getXAxis().getAxisLabel().setText("X");
     positionPlot.getYAxis().getAxisLabel().setText("Y");
     positionPlot.getTitle().setText("Porter Location");
-    positionPlot.setPoints(posPoints);
-    //positionPlot.addLayer("pos",  posPoints);
     positionPlot.setLineColor(color(0, 0, 0));
-    positionPlot.addLayer("tgt",  tgtPoints);
-    positionPlot.getLayer("tgt").setPointColor(color(100, 255, 100));
-    positionPlot.getLayer("tgt").setLineColor(color(50, 50, 50));
     //positionPlot.setPointColor(color(10, 10, 255));
-    
+    positionPlot.setPoints(posPoints);
 
-//    targetPlot.setDim(new float[] {400, 400});
-//    targetPlot.setPointColor(color(100, 255, 100));
-//    targetPlot.setLineColor(color(50, 50, 50));
-//    targetPlot.setPoints(tgtPoints);
+    targetPlot.setDim(new float[] {400, 400});
+    targetPlot.setPointColor(color(100, 255, 100));
+    targetPlot.setLineColor(color(50, 50, 50));
+    targetPlot.setPoints(tgtPoints);
 
     // Setup the mouse actions
-    positionPlot.activateZooming();
-    positionPlot.activatePanning();
+    //positionPlot.activateZooming();
+    //positionPlot.activatePanning();
   }
 
 
@@ -365,9 +348,9 @@ public class PositionApplet extends PApplet {
 
     // Add a new point to the second plot if the mouse moves significantly
     GPointsArray posPoints = positionPlot.getPoints();
-    GPointsArray tgtPoints = positionPlot.getLayer("tgt").getPoints();
+    GPointsArray tgtPoints = targetPlot.getPoints();
 
-    //println(targetLocation[0], targetLocation[1]);
+
     if(posPoints.getNPoints() == 0){
       posPoints.add(porterLocation_Global[0], porterLocation_Global[1], "(" + str(porterLocation_Global[0]) + " , " + str(porterLocation_Global[1]) + ")");
       positionPlot.setPoints(posPoints);
@@ -381,12 +364,12 @@ public class PositionApplet extends PApplet {
 
    if(tgtPoints.getNPoints() == 0){
       tgtPoints.add(targetLocation[0], targetLocation[1], "(" + str(targetLocation[0]) + " , " + str(targetLocation[1]) + ")");
-      positionPlot.getLayer("tgt").setPoints(tgtPoints);
+      targetPlot.setPoints(tgtPoints);
     } else {
       GPoint lastPoint = tgtPoints.getLastPoint();
       if(sq(lastPoint.getX() - targetLocation[0]) + sq(lastPoint.getY() - targetLocation[1]) > 2500){
         tgtPoints.add(targetLocation[0], targetLocation[1], "(" + str(targetLocation[0]) + " , " + str(targetLocation[1]) + ")");
-        positionPlot.getLayer("tgt").setPoints(tgtPoints);
+        targetPlot.setPoints(tgtPoints);
       }
     }
 
@@ -407,15 +390,15 @@ public class PositionApplet extends PApplet {
     positionPlot.drawPoints();
     positionPlot.endDraw();
 
-    //targetPlot.beginDraw();
-    ////targetPlot.drawBackground();
-    //// positionPlot.drawBox();
-    //// positionPlot.drawXAxis();
-    //// positionPlot.drawYAxis();
-    //// positionPlot.drawTitle();
-    //// positionPlot.drawGridLines(GPlot.BOTH);
-    //targetPlot.drawLines();
-    //targetPlot.drawPoints();
-    //targetPlot.endDraw();
+    targetPlot.beginDraw();
+    //targetPlot.drawBackground();
+    // positionPlot.drawBox();
+    // positionPlot.drawXAxis();
+    // positionPlot.drawYAxis();
+    // positionPlot.drawTitle();
+    // positionPlot.drawGridLines(GPlot.BOTH);
+    targetPlot.drawLines();
+    targetPlot.drawPoints();
+    targetPlot.endDraw();
   }
 }

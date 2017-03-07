@@ -18,11 +18,11 @@ def testFunction():
     viewerCon.write(str(random.randint(0 ,200)) + ",")  # 6
     # motor speeds
     # demanded motor speeds
-    viewerCon.write(str(random.randint(0 ,50)) + ",")  # 7
-    viewerCon.write(str(random.randint(0 ,50)) + ",")
+    viewerCon.write(str(random.choice([0 ,50])) + ",")  # 7
+    viewerCon.write(str(random.choice([0 ,50])) + ",")
     # actual speeds
-    viewerCon.write(str(random.randint(0 ,50)) + ",")  # 9
-    viewerCon.write(str(random.randint(0 ,50)) + ",")
+    viewerCon.write(str(random.choice([0 ,100])) + ",")  # 9
+    viewerCon.write(str(random.choice([0 ,100])) + ",")
     # POSITIONS
     # target
     viewerCon.write(str(100) + ",")  # 11
@@ -48,7 +48,17 @@ def testFunction():
     # obstruction status
     viewerCon.write(str(True) + ",")  # 21
     # data status
-    viewerCon.write(str(True))  # 22
+    viewerCon.write(str(True) + ",")  # 22
+
+    viewerCon.write(str(random.uniform(-np.pi, np.pi)) + ",")  # 23
+
+    viewerCon.write(str(random.randint(0 ,200)) + ",")  # 24
+    viewerCon.write(str(random.randint(0 ,200)) + ",")
+    viewerCon.write(str(random.randint(0 ,200)) + ",")
+    viewerCon.write(str(random.randint(0 ,200)) + ",")
+    viewerCon.write(str(random.randint(0 ,200)) + ",")
+    viewerCon.write(str(random.randint(0 ,200)) + ",")
+    viewerCon.write(str(random.randint(0 ,200)) )  # 30
 
     viewerCon.write("\n")
 
@@ -63,7 +73,7 @@ except Exception as e:
 while True:
     try:
         testFunction()
-        time.sleep(1)
+        time.sleep(0.5)
     except Exception as e:
         print (str(e))
 
