@@ -19,6 +19,7 @@ import pyttsx
 import math
 import multiprocessing
 import glob
+import datetime
 
 from sys import platform
 #if on linux, import functions for IMU and ip
@@ -36,6 +37,11 @@ import logging.handlers
 #the mask for data logging
 logging.basicConfig(format='%(asctime)s - (%(threadName)s) %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
                     level=logging.INFO) #change the logging level here to change the display verbosity
+
+try:
+    import vpLib
+except Exception as e:
+     logging.error("Cant import vpLib")
 
 ###---Global Variables-------------
 
@@ -142,7 +148,6 @@ US2_portAddr = ""
 
 def serialDetect():
 #This fuction will ping all serial connections to find out what each device is
-
 
     global motor_portAddr
     global US1_portAddr
@@ -1353,6 +1358,215 @@ def porterSpeech(speechQueue,exitFlag):
 def cameraProcess():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
 
+class CameraThreadClass(MultiThreadBase):
+    def __init__(self, threadID, name):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.pulseData = ["",""] #pulses counted by the motor controller
+        self.vanishx = [0, 0, 0, 0, 0]
+        self.vanishy = [0, 0, 0, 0, 0]
+        self.vanishxVar = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.vanishyVar = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    def run(self):
+        global cam
+
+        if cam:
+            self.vpFromCam()
+        else:
+            self.vpFromVid()
+
+    def mAverage(self, vpCoord, n):
+        i = 0
+
+        if len(vpCoord) == 2:
+            for i in range(0, 2):
+                vanish[i] += (int(vpCoord[i]) - vanish[i]) / n
+
+        return vanish
+
+    def medianFilter(self, vpCoord, n):
+        i = 0
+        #global vpValid
+
+
+        if len(vpCoord) == 2:
+            self.vanishx[0] = self.vanishx[1]
+            self.vanishx[1] = self.vanishx[2]
+            self.vanishx[2] = self.vanishx[3]
+            self.vanishx[3] = self.vanishx[4]
+            self.vanishx[4] = vpCoord[0]
+
+            self.vanishy[0] = self.vanishy[1]
+            self.vanishy[1] = self.vanishy[2]
+            self.vanishy[2] = self.vanishy[3]
+            self.vanishy[3] = self.vanishy[4]
+            self.vanishy[4] = vpCoord[1]
+
+            #print "Unsorted" , self.vanishx, self.vanishy
+            sortedx = sorted(self.vanishx)
+            sortedy = sorted(self.vanishy)
+
+            #medVar = np.var(self.vanishx), np.var(self.vanishy)
+
+            #print medVar
+
+            #if (medVar[0] > 100) or (medVar[1] > 100):
+            #    vpValid = 0
+            #else:
+            #    vpValid = 1
+
+
+
+            #print "Sorted" , sortedx, sortedy
+            vanish = (sortedx[2],sortedy[2])
+
+        return vanish
+
+    def varianceFilter(self, vpCoord, n):
+        global vpValid
+        i = 0
+
+        for i in range(0, n - 1):
+            self.vanishxVar[i] = self.vanishxVar[i + 1]
+            self.vanishyVar[i] = self.vanishyVar[i + 1]
+
+        self.vanishxVar[n - 1] = vpCoord[0]
+        self.vanishyVar[n - 1] = vpCoord[1]
+
+        medVar = np.var(self.vanishxVar), np.var(self.vanishyVar)
+
+        if (medVar[0] > 100) or (medVar[1] > 100):
+            vpValid = 0
+        else:
+            vpValid = 1
+
+        return 0
+
+    def vpFromCam(self):
+        global vanish
+        capWebcam = cv2.VideoCapture(0)  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
+        if capWebcam.isOpened() == False:  # check if VideoCapture object was associated to webcam successfully
+            print "error: capWebcam not accessed successfully\n\n"  # if not, print error message
+            #logging.error("error: capWebcam not accessed successfully\n\n")
+            os.system("pause")
+
+        img2 = np.zeros((540, 960, 3), np.uint8)
+
+        while cv2.waitKey(1) != 27 and capWebcam.isOpened():
+            blnFrameReadSuccessfully, img = capWebcam.read()
+
+            try: #try to find vanishing point
+                hough_lines = hough_transform(img, False)  #calculate hough lines
+                if hough_lines: #if lines found
+                    random_sample = getLineSample(hough_lines, 100)  # take a sample of 100 lines
+                    intersections = find_intersections(hough_lines, img)  # Find intersections in the sample
+                    if intersections:  # if intersections are found
+                        grid_size[0] = img.shape[0] // 10 #set the grid size to be 20 by 20
+                        grid_size[1] = img.shape[1] // 20
+                        #find vanishing points
+                        vanishing_point = vp_candidates(img, grid_size, intersections)
+                        #returns the best cell
+
+                        vanish2 = self.medianFilter(vanishing_point[0], 4)
+                        vanish = self.mAverage(vanish2, 3)
+                        # print vanishing_point[0], vanish
+
+                        cv2.circle(img, (vanish[0], 100), 5, (10, 10, 255), thickness=2)
+                        cv2.circle(img, (vanish2[0], 100), 5, (210, 255, 10), thickness=2)
+
+                        cv2.circle(img2, (vanish[0], vanish[1]), 1, (10, 10, 255), thickness=2)
+                        cv2.circle(img2, (vanish2[0], vanish2[1]), 1, (210, 255, 10), thickness=2)
+                        # cv2.drawMarker(img2, (vanish[0], vanish[1]), (10, 10, 255))
+                        # cv2.drawMarker(img2, (vanish2[0], vanish2[1]), (210, 255, 10))
+
+                cv2.imshow('vp Image', img)
+                cv2.imshow('img2', img2)
+
+            except Exception as e:
+                print ("Error - " + str(e))
+
+        cv2.destroyAllWindows()
+
+    def vpFromImg(self):
+        filepath = "cor_in.jpg"
+
+        img = cv2.imread(filepath)
+        img = cv2.resize(img, (0, 0), fx=0.2, fy=0.2)
+
+        #try:
+        hough_lines = hough_transform(img, False) #
+        if hough_lines:
+            random_sample = getLineSample(hough_lines, 100) #take a sample of n lines
+            intersections = find_intersections(random_sample, img) #Find intersections in the sample
+            if intersections: #if intersections are found
+                grid_rows = 2
+                grid_columns = 5
+
+                grid_size[0] = img.shape[0] //10
+                grid_size[1] = img.shape[1] //20
+                vanishing_point = vp_candidates(img, grid_size, intersections)
+                print str(vanishing_point)
+                #cv2.rectangle(img, (100, 100), (150, 150), (0, 255, 0), 2)
+                cv2.circle(img, vanishing_point[0], 5, (10,10,10),thickness=2)
+                cv2.imshow('vp Image',img)
+
+        cv2.waitKey(0) != 27
+        cv2.destroyAllWindows()
+
+    def vpFromVid(self):
+        global vanish
+
+        img2 = np.zeros((540, 960, 3), np.uint8)
+        img3 = np.zeros((540, 960, 3), np.uint8)
+        capVid = cv2.VideoCapture('cor2small.mp4')  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
+
+        if capVid.isOpened() == False:  # check if VideoCapture object was associated to webcam successfully
+            #print "error: capVid not accessed successfully\n\n"  # if not, print error message
+            logging.error("error: capWebcam not accessed successfully\n\n")
+            os.system("pause")
+
+        while cv2.waitKey(1) != 27 and capVid.isOpened():
+            blnFrameReadSuccessfully, img = capVid.read()
+
+            try: #try to find vanishing point
+                hough_lines = hough_transform(img, False)  #calculate hough lines
+                if hough_lines: #if lines found
+                    random_sample = getLineSample(hough_lines, 30)  # take a sample of 100 lines
+                    intersections = find_intersections(random_sample, img)  # Find intersections in the sample
+                    if intersections:  # if intersections are found
+                        grid_size[0] = img.shape[0] // 8 #set the grid size to be 20 by 20
+                        grid_size[1] = img.shape[1] // 20
+                        #find vanishing points
+                        vanishing_point = vp_candidates(img, grid_size, intersections)
+                        #returns the best cell
+
+                        #vanish2 = self.medianFilter(vanishing_point[0], 4)
+                        vanish2 = self.medianFilter(vanishing_point[0], 5)
+                        #vanish3 = self.mAverage(vanish2, 5)
+                        #print vanishing_point[0], vanish
+
+                        x = self.varianceFilter(vanishing_point[0], 10)
+
+                        if vpValid == 1:
+                            cv2.circle(img, (vanish2[0], vanish2[1]), 5, (210, 255, 10), thickness=2)
+                            #cv2.circle(img, (vanish2[0], 100), 5, (210, 255, 10), thickness=2)
+                        else:
+                            cv2.circle(img, (vanish2[0], vanish2[1]), 5, (10, 10, 255), thickness=2)
+                            #cv2.circle(img2, (vanish[0], vanish[1]), 1, (10, 10, 255), thickness=2)
+                            #cv2.circle(img2, (vanish2[0], vanish2[1]), 1, (210, 255, 10), thickness=2)
+                            #cv2.drawMarker(img2, (vanish[0], vanish[1]), (10, 10, 255))
+                            #cv2.drawMarker(img2, (vanish2[0], vanish2[1]), (210, 255, 10))
+
+                cv2.imshow('vp Image', img)
+                cv2.imshow('img2', img2)
+
+
+            except Exception as e:
+                print ("Error - " + str(e))
+
+        cv2.destroyAllWindows()
 
 ###---Function Definitions
 

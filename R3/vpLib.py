@@ -15,13 +15,13 @@ def hough_transform(img, probabilistic):
 #compare this with a blur
     kernel = np.ones((7, 7), np.uint8)
     opening = cv2.morphologyEx(gray, cv2.MORPH_OPEN, kernel)  #erode, then dilate
-    cv2.imshow("opened", opening)
+    #cv2.imshow("opened", opening)
 
     #detect Edges
     #blur = cv2.blur(gray,(3,3))
     edgeThreshhold  = 60
     edges = cv2.Canny(opening, 30, 80, apertureSize=3)  # Canny edge detection
-    cv2.imshow("edges", edges)
+    #cv2.imshow("edges", edges)
 
     #Standard Hough transform
     lines = cv2.HoughLines(edges, 1, np.pi / 180, 100)
@@ -161,7 +161,7 @@ def find_vanishing_point(img, grid_size, intersections):
                 max_intersections = current_intersections
                 best_cell = ((cell_left + cell_right) / 2, (cell_bottom + cell_top) / 2)
 
-    cv2.imshow("mid Grid", img)
+    #cv2.imshow("mid Grid", img)
     if not best_cell == [None, None]:
         rx1 = best_cell[0] - grid_size[1] / 2
         ry1 = best_cell[1] - grid_size[0] / 2
