@@ -15,49 +15,10 @@
 #define br_trig A1
 #define br_echo A0
 
-int pulseAll(){
-  digitalWrite(t_trig, LOW);
-  digitalWrite(lf_trig, LOW);
-  digitalWrite(rf_trig, LOW);
-  digitalWrite(lb_trig, LOW);
-  digitalWrite(rb_trig, LOW);
-  digitalWrite(bl_trig, LOW);
-  digitalWrite(br_trig, LOW);
-
-
-  delayMicroseconds(2);
-
-  //send out a pulse
-  digitalWrite(t_trig, HIGH);
-  digitalWrite(lf_trig, HIGH);
-  digitalWrite(rf_trig, HIGH);
-  digitalWrite(lb_trig, HIGH);
-  digitalWrite(rb_trig, HIGH);
-  digitalWrite(bl_trig, HIGH);
-  digitalWrite(br_trig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(t_trig, LOW);
-  digitalWrite(lf_trig, LOW);
-  digitalWrite(rf_trig, LOW);
-  digitalWrite(lb_trig, LOW);
-  digitalWrite(rb_trig, LOW);
-  digitalWrite(bl_trig, LOW);
-  digitalWrite(br_trig, LOW);
-}
-
-int sendPulse(int trigPin, int echoPin){
-  //reset pin
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  //send out a pulse
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10); // Added this line
-  digitalWrite(trigPin, LOW);
-}
-
 int usMeasure (int trigPin, int echoPin) {
   long duration =0 , distance = 0;
-
+  long tStart = 0, tEnd = 0;
+  int timeout = 60000;
   //reset pin
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -67,15 +28,20 @@ int usMeasure (int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
 
   //measure pulse
-  duration = pulseIn(echoPin, HIGH, 50000);
-  distance = duration/58;
-  if (distance > 200) {
-    distance = 200;
-    //Serial.println(0);
+  tStart = mircos();
+  duration = pulseIn(echoPin, HIGH, timeout);
+  tEnd = micros();
+
+  if tEnd-tStart < timeout {
+    distance = duration/58;
+    if (distance > 200) {
+      distance = 200;
+    }
   } else {
-    //Serial.println(distance);
-    //Serial.println(" cm");
+    Serial.println("Timeout");
+    distance = 250;
   }
+
   return distance;
 }
 
@@ -124,5 +90,5 @@ void loop() {
   //Serial.print("execution time (micros)- ");
   //Serial.println(tEnd - tStart);
   Serial.print('\n');
-  //delay(50);
+
 }

@@ -12,66 +12,36 @@
 #define r_echo 5
 #define b_trig 2
 #define b_echo 3
-#define d_trig 0 
-#define d_echo 1
-
-int pulseAll(){
-  digitalWrite(c_trig, LOW);  
-  digitalWrite(fl_trig, LOW); 
-  digitalWrite(fr_trig, LOW); 
-  digitalWrite(l_trig, LOW); 
-  digitalWrite(r_trig, LOW); 
-  digitalWrite(b_trig, LOW); 
-  
-  delayMicroseconds(2);
-  
-  //send out a pulse
-  digitalWrite(c_trig, HIGH);  
-  digitalWrite(fl_trig, HIGH); 
-  digitalWrite(fr_trig, HIGH); 
-  digitalWrite(l_trig, HIGH); 
-  digitalWrite(r_trig, HIGH); 
-  digitalWrite(b_trig, HIGH); 
-  delayMicroseconds(10);
-  digitalWrite(c_trig, LOW);  
-  digitalWrite(fl_trig, LOW); 
-  digitalWrite(fr_trig, LOW); 
-  digitalWrite(l_trig, LOW); 
-  digitalWrite(r_trig, LOW); 
-  digitalWrite(b_trig, LOW); 
-}
-
-int sendPulse(int trigPin, int echoPin){
-  //reset pin
-  digitalWrite(trigPin, LOW);  
-  delayMicroseconds(2); 
-  //send out a pulse
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10); // Added this line
-  digitalWrite(trigPin, LOW);
-}
+#define d_trig A0
+#define d_echo A1
 
 int usMeasure (int trigPin, int echoPin) {
   long duration =0 , distance = 0;
-  
+  long tStart = 0, tEnd = 0;
+  int timeout = 50000;
+
   //reset pin
-  digitalWrite(trigPin, LOW);  
-  delayMicroseconds(2); 
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
   //send out a pulse
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10); // Added this line
   digitalWrite(trigPin, LOW);
 
   //measure pulse
-  duration = pulseIn(echoPin, HIGH, 50000);
-  distance = duration/58; 
-  if (distance > 200) {
-    distance = 200;
-    //Serial.println(0);
+  tStart = mircos();
+  duration = pulseIn(echoPin, HIGH, timeout);
+  tEnd = micros();
+
+  if tEnd-tStart < timeout {
+    distance = duration/58;
+    if (distance > 200) {
+      distance = 200;
+    }
   } else {
-    //Serial.println(distance);
-    //Serial.println(" cm"); 
+    distance = 250;
   }
+
   return distance;
 }
 
@@ -96,7 +66,7 @@ void loop() {
   long tStart = micros();
   long tEnd = 0;
   int i = 0;
-  
+
   usArray[0] = usMeasure(c_trig, c_echo);
   usArray[3] = usMeasure(l_trig, l_echo);
   usArray[4] = usMeasure(r_trig, r_echo);
@@ -119,4 +89,3 @@ void loop() {
   Serial.print('\n');
   //delay(50);
 }
-
