@@ -73,11 +73,13 @@ safetyOn = True
 ##--US data
 global USAvgDistances #vector holding the average US distances
 global obstruction #Boolean for comminicating whether there is an obstruction in the direction of travel
+global UShosts
 
 #F_bot, F_left, F_right, L_mid, R_mid, B_mid - F_top, L_front, R_front, L_back, R_back, B_left, B_right
 USAvgDistances = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 obstruction = False
 USThresholds = [50, 40, 40] #threasholds for treating objects as obstacles [front,side,back]
+UShosts = 2
 
 ##--Multi-Threading/Muti-processing
 global threadLock #lock to be used when changing global variables
@@ -144,7 +146,8 @@ motor_portAddr = ""
 US1_portAddr = ""
 US2_portAddr = ""
 
-#function to set exit flags
+global h_scores
+h_scores = [0.,0.,0.,0.]
 
 def serialDetect():
 #This fuction will ping all serial connections to find out what each device is
@@ -393,9 +396,16 @@ class autoPilotThread(MultiThreadBase):
         global lastCommand
         global targetDestination
         global autoPilot
+        global h_scores
 
         while not exitFlag.value: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
+
+                targetDestination = [100,0]
+
+                self.hScores = self.checkquad()
+                h_scores = self.hScores
+
                 time.sleep(1) #...sleep for a bit ...zzzzzzz
             elif not imuEnable.value:
                 logging.warning("IMU not available. Can't turn on Autopilot... Soz...")
@@ -418,6 +428,7 @@ class autoPilotThread(MultiThreadBase):
                     time.sleep(2)
 
                     self.hScores = self.checkquad()
+                    h_scores = self.hScores
 
                     if self.bestScoreIndex == 0:
                         speechQueue.put("Best way to go is forward")
@@ -787,8 +798,11 @@ class autoPilotThread(MultiThreadBase):
     def envCheck(self):
         #self.envScore = []
 
-        envScore = [USAvgDistances[0],USAvgDistances[5],USAvgDistances[3],USAvgDistances[4]]
-        #map this non-linearly
+        envScore = [10 * numpy.exp(-2 * USAvgDistances[0] / 10),
+                    10 * numpy.exp(-2 * USAvgDistances[5] / 10),
+                    10 * numpy.exp(-2 * USAvgDistances[3] / 10),
+                    10 * numpy.exp(-2 * USAvgDistances[4] / 10)]
+        #Exponential mapping of distance
 
         print("environment score is " + str(envScore) + " max env score is " + str(max(envScore)) + " at " +
               str(envScore.index(max(envScore))))
@@ -1204,7 +1218,7 @@ class usDataThread(MultiThreadBase):
                         logging.error("Trying to open Ultrasonic port 1 - %s", str(e))
                         logging.info("No Ultrasonic comms... Looping Back...")
 
-                if USConn2.closed:
+                if UShosts == 2 and USConn2.closed:
                     try:
                         logging.debug("Trying to open US2 serial port")
                         USConn2.open()
@@ -1233,14 +1247,16 @@ class usDataThread(MultiThreadBase):
     def getUSvector(self):
         logging.debug("inside getUSVector")
         try:
-            logging.debug("Trying to get US data")
+            logging.debug("Trying to get US data 1")
             self.inputBuf = USConn1.readline()
             self.inputBuf.rstrip("\n\r")
             self.rawUSdata_1 = self.inputBuf.split(",")
 
-            self.inputBuf = USConn2.readline()
-            self.inputBuf.rstrip("\n\r")
-            self.rawUSdata_2 = self.inputBuf.split(",")
+            if UShosts == 2:
+                logging.debug("Trying to get US data 2")
+                self.inputBuf = USConn2.readline()
+                self.inputBuf.rstrip("\n\r")
+                self.rawUSdata_2 = self.inputBuf.split(",")
 
         except Exception as e:
             self.errorCount += 1
@@ -1250,6 +1266,7 @@ class usDataThread(MultiThreadBase):
         global USAvgDistances
         global threadLock
         i = 0
+
         rawUSdata = self.rawUSdata_1 + self.rawUSdata_2
 
         if len(rawUSdata) == 13:
@@ -1731,12 +1748,15 @@ if __name__ == '__main__':
         logging.info("Trying to connect to Ultrasonic controller")
         try:
             if (platform == "linux") or (platform == "linux2"):
-                USConn1 = serial.Serial('/dev/ttyACM1', 19200)
-                USConn2 = serial.Serial('/dev/ttyACM2', 19200)
+                USConn1 = serial.Serial('/dev/ttyACM0', 19200)
+                logging.info("Connected to Ultrasonic sensors at %s", str(USConn1))
+                if UShosts == 2:
+                    USConn2 = serial.Serial('/dev/ttyACM1', 19200)
+                    logging.info("Connected to Ultrasonic sensors at %s", str(USConn2))
+
             elif (platform == "win32"):
                 USConn1 = serial.Serial('COM3', 19200)
 
-            logging.info("Connected to Ultrasonic sensors at %s", str(USConn1))
             USthread = usDataThread(5, "Ultrasonic thread")
             USthread.start()
             threads.append(USthread)
