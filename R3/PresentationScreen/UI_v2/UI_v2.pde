@@ -27,7 +27,6 @@ int[] sense_rb = new int[2]; //location of r_b sensor
 int[] sense_bl = new int[2]; //location of b_l sensor
 int[] sense_br = new int[2]; //location of b_r sensor
 
-
 float sensorAngle = 0.3;
 
 float dispScale = 1;
@@ -65,6 +64,8 @@ float porterYaw = 0;
 XYChart leftWheel;
 XYChart rightWheel;
 
+float [] h_scores = new float[4];
+
 
 //should combine the following 2 functions... spaghetti code much? -_-
 
@@ -90,7 +91,6 @@ void shiftBackDemandedSpeeds(float left, float right){
   //timeSeries[timeSeries.length-1] = timeSeries[timeSeries.length-2] + 1;
 }
 
-
 void setup() {
   size(100, 100);
 
@@ -107,10 +107,13 @@ void setup() {
   SpeedApplet speedDisplay = new SpeedApplet();
   OrientationApplet orientationDisplay = new OrientationApplet();
   PositionApplet positionDisplay = new PositionApplet();
+  HeuristicApplet heuristicDisplay = new HeuristicApplet();
+
   PApplet.runSketch(args, US_sensors);
   PApplet.runSketch(args, speedDisplay);
   PApplet.runSketch(args, orientationDisplay);
   PApplet.runSketch(args, positionDisplay);
+  PApplet.runSketch(args, heuristicDisplay);
 }
 
 void draw() {
@@ -123,9 +126,8 @@ void draw() {
         inBuffer = inBuffer.trim();
         println(inBuffer);
         String[] tokens = inBuffer.split(delims);
-        //println(tokens.length);
-        if (tokens.length == 31){
-
+        println(tokens.length);
+        if (tokens.length == 35){
           for (int i = 0; i < 6; i++) {
              distances[i] = int(Float.parseFloat(tokens[i+1]));
           }
@@ -149,12 +151,18 @@ void draw() {
 
           //shiftBackDemandedSpeeds
 
-          porterOrientation = degrees(Float.parseFloat(tokens[18]));
-          wheelOrientation = degrees(Float.parseFloat(tokens[23]));
+
           targetLocation[0] = Integer.parseInt(tokens[11]);
           targetLocation[1] = Integer.parseInt(tokens[12]);
           porterLocation_Global[0] = Float.parseFloat(tokens[13]);
           porterLocation_Global[1] = Float.parseFloat(tokens[14]);
+
+          porterOrientation = degrees(Float.parseFloat(tokens[18]));
+          wheelOrientation = degrees(Float.parseFloat(tokens[23]));
+
+          for (int i = 0; i < 4; i++) {
+             h_scores[i] = int(Float.parseFloat(tokens[i+31]));
+          }
         }
       }
     }
@@ -431,10 +439,10 @@ public class PositionApplet extends PApplet {
     //positionPlot.setPointColor(color(10, 10, 255));
 
 
-//    targetPlot.setDim(new float[] {400, 400});
-//    targetPlot.setPointColor(color(100, 255, 100));
-//    targetPlot.setLineColor(color(50, 50, 50));
-//    targetPlot.setPoints(tgtPoints);
+    //    targetPlot.setDim(new float[] {400, 400});
+    //    targetPlot.setPointColor(color(100, 255, 100));
+    //    targetPlot.setLineColor(color(50, 50, 50));
+    //    targetPlot.setPoints(tgtPoints);
 
     // Setup the mouse actions
     positionPlot.activateZooming();
@@ -499,5 +507,50 @@ public class PositionApplet extends PApplet {
     //targetPlot.drawLines();
     //targetPlot.drawPoints();
     //targetPlot.endDraw();
+  }
+}
+
+public class HeuristicApplet extends PApplet {
+
+  float[] AvgHscores = new float[4];
+
+  void mAverage(int n) {
+    int i = 0;
+    for (i = 0; i < h_scores.length; i++) {
+      AvgHscores[i] = AvgHscores[i] + (h_scores[i] - AvgHscores[i])/n;
+    }
+  }
+
+  public void settings() {
+    size(280, 280);
+  }
+  public void setup(){
+    surface.setLocation(605, 0);
+  }
+
+  public void draw() {
+    background(240);
+    fill(150);
+    stroke(255,255,255);
+    strokeWeight(1);
+
+    mAverage(7);
+
+    rect(40, 40, (int)AvgHscores[0], 30);
+    rect(40, 90, (int)AvgHscores[2], 30);
+    rect(40, 140, (int)AvgHscores[3], 30);
+    rect(40, 190, (int)AvgHscores[1], 30);
+
+    fill(10);
+    text("Forward", 40, 40);
+    text("Left", 40, 90);
+    text("Right", 40, 140);
+    text("Back", 40, 190);
+
+    text((int)AvgHscores[0], 120, 40);
+    text((int)AvgHscores[2], 120, 90);
+    text((int)AvgHscores[3], 120, 140);
+    text((int)AvgHscores[1], 120, 190);
+
   }
 }
