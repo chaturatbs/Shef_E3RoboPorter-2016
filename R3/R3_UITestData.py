@@ -18,11 +18,11 @@ def testFunction():
     viewerCon.write(str(random.randint(0 ,200)) + ",")  # 6
     # motor speeds
     # demanded motor speeds
-    viewerCon.write(str(random.choice([0 ,50])) + ",")  # 7
-    viewerCon.write(str(random.choice([0 ,50])) + ",")
+    viewerCon.write(str(random.randint(-50 ,50)) + ",")  # 7
+    viewerCon.write(str(random.randint(-50 ,50)) + ",")
     # actual speeds
-    viewerCon.write(str(random.choice([0 ,100])) + ",")  # 9
-    viewerCon.write(str(random.choice([0 ,100])) + ",")
+    viewerCon.write(str(random.randint(-50 ,50)) + ",")  # 9
+    viewerCon.write(str(random.randint(-50 ,50)) + ",")
     # POSITIONS
     # target
     viewerCon.write(str(100) + ",")  # 11
@@ -52,13 +52,21 @@ def testFunction():
 
     viewerCon.write(str(random.uniform(-np.pi, np.pi)) + ",")  # 23
 
+    #2nd US sensor data
     viewerCon.write(str(random.randint(0 ,200)) + ",")  # 24
     viewerCon.write(str(random.randint(0 ,200)) + ",")
     viewerCon.write(str(random.randint(0 ,200)) + ",")
     viewerCon.write(str(random.randint(0 ,200)) + ",")
     viewerCon.write(str(random.randint(0 ,200)) + ",")
     viewerCon.write(str(random.randint(0 ,200)) + ",")
-    viewerCon.write(str(random.randint(0 ,200)) )  # 30
+    viewerCon.write(str(random.randint(0 ,200)) + ",")  # 30
+
+    #h_scores
+    viewerCon.write(str(random.randint(50 ,200)) + ",") #31
+    viewerCon.write(str(random.randint(50 ,200)) + ",")
+    viewerCon.write(str(random.randint(50 ,200)) + ",")
+    viewerCon.write(str(random.randint(50 ,200)) ) #34
+
 
     viewerCon.write("\n")
 
