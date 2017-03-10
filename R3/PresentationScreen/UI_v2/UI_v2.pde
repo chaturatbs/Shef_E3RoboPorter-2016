@@ -53,7 +53,7 @@ float [] timeSeries = new float[40];
 float [] demandedSpeedL = new float[40];
 float [] demandedSpeedR = new float[40];
 
-int [] targetLocation = new int[2];
+float [] targetLocation = new float [2];
 float [] porterLocation_Global = new float[2];
 float [] porterLocation_Local = new float[2];
 float porterOrientation = 0;
@@ -152,8 +152,8 @@ void draw() {
           //shiftBackDemandedSpeeds
 
 
-          targetLocation[0] = Integer.parseInt(tokens[11]);
-          targetLocation[1] = Integer.parseInt(tokens[12]);
+          targetLocation[0] = Float.parseFloat(tokens[11]);
+          targetLocation[1] = Float.parseFloat(tokens[12]);
           porterLocation_Global[0] = Float.parseFloat(tokens[13]);
           porterLocation_Global[1] = Float.parseFloat(tokens[14]);
 
@@ -447,6 +447,7 @@ public class PositionApplet extends PApplet {
     // Setup the mouse actions
     positionPlot.activateZooming();
     positionPlot.activatePanning();
+    positionPlot.lockAxes();
   }
 
 
@@ -463,7 +464,7 @@ public class PositionApplet extends PApplet {
       positionPlot.setPoints(posPoints);
     } else {
       GPoint lastPoint = posPoints.getLastPoint();
-      if(sq(lastPoint.getX() - porterLocation_Global[0]) + sq(lastPoint.getY() - porterLocation_Global[1]) > 2500){
+      if(sq(lastPoint.getX() - porterLocation_Global[0]) + sq(lastPoint.getY() - porterLocation_Global[1]) > 500){
         posPoints.add(porterLocation_Global[0], porterLocation_Global[1], "(" + str(porterLocation_Global[0]) + " , " + str(porterLocation_Global[1]) + ")");
         positionPlot.setPoints(posPoints);
       }
@@ -474,7 +475,7 @@ public class PositionApplet extends PApplet {
       positionPlot.getLayer("tgt").setPoints(tgtPoints);
     } else {
       GPoint lastPoint = tgtPoints.getLastPoint();
-      if(sq(lastPoint.getX() - targetLocation[0]) + sq(lastPoint.getY() - targetLocation[1]) > 2500){
+      if(sq(lastPoint.getX() - targetLocation[0]) + sq(lastPoint.getY() - targetLocation[1]) > 500){
         tgtPoints.add(targetLocation[0], targetLocation[1], "(" + str(targetLocation[0]) + " , " + str(targetLocation[1]) + ")");
         positionPlot.getLayer("tgt").setPoints(tgtPoints);
       }

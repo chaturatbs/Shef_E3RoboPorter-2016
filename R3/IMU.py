@@ -27,7 +27,7 @@ import os.path
 import time
 import math  
 
-SETTINGS_FILE = "RTIMULib.ini"  
+SETTINGS_FILE = "RTIMULib"
    
 s = RTIMU.Settings(SETTINGS_FILE)
 imu = RTIMU.RTIMU(s)  

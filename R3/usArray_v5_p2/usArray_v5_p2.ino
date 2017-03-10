@@ -15,6 +15,8 @@
 #define br_trig A1
 #define br_echo A0
 
+#import String
+
 int usMeasure (int trigPin, int echoPin) {
   long duration =0 , distance = 0;
   long tStart = 0, tEnd = 0;
@@ -34,12 +36,12 @@ int usMeasure (int trigPin, int echoPin) {
 
   if tEnd-tStart < timeout {
     distance = duration/58;
-    if (distance > 200) {
-      distance = 200;
+    if (distance > 250) {
+      distance = 250;
     }
   } else {
     Serial.println("Timeout");
-    distance = 250;
+    distance = 270;
   }
 
   return distance;
@@ -68,7 +70,13 @@ void loop() {
   long tStart = micros();
   long tEnd = 0;
   int i = 0;
+  String userInput = ""
 
+  if (Serial.available() > 0){
+    userInput = Serial.readStringUntil("\n");
+    if userInput == "id?"
+      Serial.print('us2\n');
+  }
   usArray[0] = usMeasure(t_trig, t_echo);
   usArray[3] = usMeasure(lb_trig, lb_echo);
   usArray[4] = usMeasure(rb_trig, rb_echo);
@@ -86,6 +94,7 @@ void loop() {
       Serial.print(',');
     }
   }
+
   tEnd = micros();
   //Serial.print("execution time (micros)- ");
   //Serial.println(tEnd - tStart);

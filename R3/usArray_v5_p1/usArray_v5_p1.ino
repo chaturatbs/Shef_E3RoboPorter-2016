@@ -29,11 +29,12 @@ int usMeasure (int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
 
   //measure pulse
-  tStart = mircos();
-  duration = pulseIn(echoPin, HIGH, timeout);
+  tStart = micros();
+  duration = pulseIn(echoPin, HIGH, 50000);
   tEnd = micros();
 
-  if tEnd-tStart < timeout {
+  //Serial.print("measured");
+  if (tEnd-tStart < 50000) {
     distance = duration/58;
     if (distance > 200) {
       distance = 200;
@@ -41,7 +42,7 @@ int usMeasure (int trigPin, int echoPin) {
   } else {
     distance = 250;
   }
-
+  //Serial.print(distance);
   return distance;
 }
 
@@ -66,7 +67,8 @@ void loop() {
   long tStart = micros();
   long tEnd = 0;
   int i = 0;
-
+  //Serial.print("starting");
+  
   usArray[0] = usMeasure(c_trig, c_echo);
   usArray[3] = usMeasure(l_trig, l_echo);
   usArray[4] = usMeasure(r_trig, r_echo);
