@@ -2,8 +2,8 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="7638390d-cc33-485a-b252-3e1e656f93bf" name="roboPorter" url="http://192.168.26.226">
-        <fileTransfer host="192.168.26.226" port="21" rootFolder="/home/pi">
+      <webServer id="7638390d-cc33-485a-b252-3e1e656f93bf" name="roboPorter" url="http://192.168.20.23">
+        <fileTransfer host="192.168.20.23" port="21" rootFolder="/home/pi">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" />
           </advancedOptions>

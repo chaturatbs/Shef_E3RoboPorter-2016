@@ -4,32 +4,55 @@
 import random
 import cv2
 import numpy as np
+import time
 import operator
 
-# Perform edge detection
-def hough_transform(img, probabilistic):
 
+# Perform edge detection
+def hough_transform(img, probabilistic, startTime, profiling):
+    sumTime = 0
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Convert image to grayscale
 
+    if profiling:
+        duration = time.time() - startTime
+        print "Gray Time :" + str(duration)
+        sumTime += duration
+        startTime = time.time()
+
     #define a kernel for morphological noise reduction
-#compare this with a blur
+    #compare this with a blur
     kernel = np.ones((7, 7), np.uint8)
     opening = cv2.morphologyEx(gray, cv2.MORPH_OPEN, kernel)  #erode, then dilate
-    #cv2.imshow("opened", opening)
+
+    if profiling:
+        duration = time.time() - startTime
+        print "Morph Time :" + str(duration)
+        sumTime += duration
+        startTime = time.time()
 
     #detect Edges
-    #blur = cv2.blur(gray,(3,3))
     edgeThreshhold  = 60
     edges = cv2.Canny(opening, 30, 80, apertureSize=3)  # Canny edge detection
-    #cv2.imshow("edges", edges)
+
+    if profiling:
+        duration = time.time() - startTime
+        print "Canny Time :" + str(duration)
+        sumTime += duration
+        startTime = time.time()
 
     #Standard Hough transform
     lines = cv2.HoughLines(edges, 1, np.pi / 180, 100)
     hough_lines = []
 
+    if profiling:
+        duration = time.time() - startTime
+        print "Lines Time :" + str(duration)
+        sumTime += duration
+        startTime = time.time()
+
     # Convert Rho and Theta to a line with end points
     thetaThreshold = 10 #to filter out lines with shallow angles
-    for line in range(0,len(lines)):#lines:
+    for line in range(0,min(len(lines),20)):#lines:
         for rho, theta in lines[line]:
 
             #Filter out vertical and horizontal lines
@@ -54,7 +77,13 @@ def hough_transform(img, probabilistic):
                 #add the line to observed line list
                 hough_lines.append(((x1, y1), (x2, y2)))
 
-    return hough_lines #return the lines found
+    if profiling:
+        duration = time.time() - startTime
+        print "Cart Time :" + str(duration)
+        sumTime += duration
+        startTime = time.time()
+
+    return hough_lines, startTime, sumTime #return the lines found
 
 # Random sampling of lines
 def getLineSample(lines, size):
@@ -66,11 +95,11 @@ def getLineSample(lines, size):
 def det(a, b):
     return a[0] * b[1] - a[1] * b[0]
 
-
 # Find intersection point of two lines (not segments!)
 def line_intersection(line1, line2):
-    #line[0] is start point, line[1] is endpoint
-    #line[][0] is x, line [][1] is y
+        #line[0] is start point, line[1] is endpoint
+        #line[][0] is x, line [][1] is y
+
     x_diff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
     y_diff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
 
@@ -80,23 +109,20 @@ def line_intersection(line1, line2):
     if ((grad1 >= 0) and (grad2 >= 0)) or ((grad1 < 0) and (grad2 < 0)):
         return None
 
-#Need to check this
+    #Need to check this
     #find the determinant
     div = det(x_diff, y_diff)
     if div == 0:
         return None  # Lines don't cross
 
-
-
     #if intersects..
     d = (det(*line1), det(*line2))
     x = det(d, x_diff) / div
     y = det(d, y_diff) / div
-#------
+    #------
 
     #if intersects, return intersection points
     return x, y
-
 
 # Find multi line intersections
 def find_intersections(lines, img):
@@ -118,7 +144,6 @@ def find_intersections(lines, img):
                     intersections.append(intersection) #...add to the line intersections
 
     return intersections
-
 
 # Voting Process to find the grid with most intersection => vanishing point
 def find_vanishing_point(img, grid_size, intersections):
@@ -143,8 +168,7 @@ def find_vanishing_point(img, grid_size, intersections):
             cell_top = i * grid_size[0]
             cell_bottom = (i + 1) * grid_size[0]
             cv2.rectangle(img, (cell_left, cell_top), (cell_right, cell_bottom), (0, 0, 0), 1)
-            # name = "mid Grid" + str(i) + "-" + str(j)
-            # cv2.imshow(name, img)
+
             current_intersections = 0  # Number of intersections in the current cell
             #check if there are intersections in the current grid
             #i = 0
@@ -215,42 +239,6 @@ def vp_candidates(img, grid_size, intersections):
         if current_intersections > max_intersections:
             max_intersections = current_intersections
             best_cell = ((cell_left + cell_right) / 2, (cell_bottom + cell_top) / 2)
-
-#    for i in xrange(int(grid_rows * 0.7)):#for each row
-#        for j in xrange(grid_columns): #for each column in row
-#
-#            # define and draw grids
-#            cell_left = j * grid_size[1]
-#            cell_right = (j + 1) * grid_size[1]
-#            cell_top = i * grid_size[0]
-#            cell_bottom = (i + 1) * grid_size[0]
-#            cv2.rectangle(img, (cell_left, cell_top), (cell_right, cell_bottom), (0, 0, 0), 1)
-#            # name = "mid Grid" + str(i) + "-" + str(j)
-#            # cv2.imshow(name, img)
-#
-#            current_intersections = 0  # Number of intersections in the current cell
-#            # check if there are intersections in the current grid
-#            # i = 0
-#            for x, y in intersections:
-#                # i += 1
-#                if cell_left < x < cell_right and cell_top < y < cell_bottom:
-#                    # increase the count if intersection is in the grid
-#                    current_intersections += 1
-#                    # del intersections[i]
-#                    # maybe remove the observed intersection from the list to speed up??
-#
-#
-#            if current_intersections != 0: #if non zero intersections...
-#                intersectionCounts[str(i) + ',' + str(j)] = current_intersections #...keep track of it
-#
-#            # If Current cell has more intersections the best observed...
-#            if current_intersections > max_intersections:
-#                max_intersections = current_intersections
-#                best_cell = ((cell_left + cell_right) / 2, (cell_bottom + cell_top) / 2)
-
-
-
-    #cv2.imshow("mid Grid", img)
 
     #draw a rectangle around the best candidate
     if not best_cell == [None, None]:

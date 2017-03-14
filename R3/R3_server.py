@@ -21,6 +21,8 @@ import multiprocessing
 import glob
 import datetime
 import copy
+import cv2
+#from vpLib import *
 
 from sys import platform
 #if on linux, import functions for IMU and ip
@@ -76,7 +78,7 @@ global USAvgDistances #vector holding the average US distances
 global obstruction #Boolean for comminicating whether there is an obstruction in the direction of travel
 global UShosts
 
-#F_bot, F_left, F_right, L_mid, R_mid, B_mid - F_top, L_front, R_front, L_back, R_back, B_left, B_right
+    #F_bot, F_left, F_right, L_mid, R_mid, B_mid - F_top, L_front, R_front, L_back, R_back, B_left, B_right
 USAvgDistances = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 obstruction = False
 USThresholds = [50, 40, 40] #threasholds for treating objects as obstacles [front,side,back]
@@ -104,6 +106,14 @@ QRdetected = False
 QRdata = ""
 
 # -Camera Functions
+
+grid_size = [0,0]
+global cam
+global vanish
+global vpValid
+
+#fps = [0]
+#frameNumber = [0]
 
 # -IMU data
 #global imu #Handle for the IMU
@@ -323,7 +333,7 @@ def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelS
     # Assume that it doesnt "move" when rotating
     # Need to check if this function is mathematically sound for all r, theta.
 
-    timeInterval = 0.5  # sampling interval of the motor controller
+    timeInterval = 0.1  # sampling interval of the motor controller
     wheelRadius = 12
     pulsesPerRev = 360
     wheelBaseWidth = 62
@@ -377,15 +387,15 @@ class autoPilotThread(MultiThreadBase):
         #path-finding parameters
         self.recPenalty = 0.2 #penalty for recursion
         self.momentumBonus = 0.5 #bonus for momentum conservation
-        self.alpha = 1 #
-        self.beta = 10
+        self.alpha = 20 #
+        self.beta = 10000
 
         #Autopilot Control parameters
         self.looping = True
         self.obs = False
         self.distQuantise = 30  # path re-calculation distance
         self.autoSpeed = 10  # autopilot movement speed
-        self.alignmentThreshold = 10  # alignment error in degrees
+        self.alignmentThreshold = 5  # alignment error in degrees
         self.hScores = []
         self.bestScoreIndex = 0
         self.distThreshold = 20
@@ -423,12 +433,12 @@ class autoPilotThread(MultiThreadBase):
                 self.dX = targetDestination[0] - porterLocation_Global[0]
                 self.dY = targetDestination[1] - porterLocation_Global[1]
 
-                while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > 30 and not exitFlag.value:
+                while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > self.distThreshold and autoPilot and not exitFlag.value:
                 # find the angle of the goal from north
 
                     speechQueue.put("Quantising the environment")
                     logging.info("Quantising The environment")
-                    time.sleep(2)
+                    time.sleep(1)
 
                     self.hScores = self.checkquad()
                     h_scores = self.hScores
@@ -455,7 +465,12 @@ class autoPilotThread(MultiThreadBase):
 
                     if obstruction:
                         time.sleep(5)
-                        speechQueue.put("sleeping for a bit")
+                        speechQueue.put("Obstruction, sleeping for a bit")
+
+                with threadLock:
+                    lastCommand = "x"
+                    speedVector = [0, 0]
+                    dataReady = True
 
                 speechQueue.put("Successfully arrived at the target")
                 logging.info("Successfully arrived at the target")
@@ -521,24 +536,24 @@ class autoPilotThread(MultiThreadBase):
                                 speedVector = [-self.autoSpeed, self.autoSpeed]
                                 dataReady = True
 
-                    # wait till its aligned
-                    while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  # Add boundaries
-                        # keep checking the angle
-                        self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
-                        print "angle change = " + str(self.angleChange)
-                        print "Orientation = " +  str(numpy.rad2deg(porterOrientation.value))
-                        if self.angleChange < -180:
-                            self.angleChange += 360
-                        if self.angleChange > 180:
-                            self.angleChange -= 360
-                        time.sleep(0.01)
+                        # wait till its aligned
+                        while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  # Add boundaries
+                            # keep checking the angle
+                            self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
+                            print "angle change = " + str(self.angleChange)
+                            print "Orientation = " +  str(numpy.rad2deg(porterOrientation.value))
+                            if self.angleChange < -180:
+                                self.angleChange += 360
+                            if self.angleChange > 180:
+                                self.angleChange -= 360
+                            time.sleep(0.01)
 
-                    # stop turning
-                    with threadLock:
-                        lastCommand = "x"
-                        speedVector = [0, 0]
-                        dataReady = True
-                        # aligned to x axis
+                        # stop turning
+                        with threadLock:
+                            lastCommand = "x"
+                            speedVector = [0, 0]
+                            dataReady = True
+                            # aligned to x axis
 
                     speechQueue.put("Aligned to the target destination")
                     logging.info("Aligned to the target destination")
@@ -570,13 +585,13 @@ class autoPilotThread(MultiThreadBase):
                         print "distance Travelled is " + str(self.distTravelled)
                         time.sleep(0.1)
 
-                    with threadLock:
-                        lastCommand = "x"
-                        speedVector = [0, 0]
-                        dataReady = True
-
                     self.dX = targetDestination[0] - porterLocation_Global[0]
                     self.dY = targetDestination[1] - porterLocation_Global[1]
+
+                with threadLock:
+                    lastCommand = "x"
+                    speedVector = [0, 0]
+                    dataReady = True
 
                 speechQueue.put("Successfully arrived at the target")
                 logging.info("Successfully arrived at the target")
@@ -724,6 +739,11 @@ class autoPilotThread(MultiThreadBase):
                     logging.info("Successfully arrived at the target")
                     autoPilot = False #turn off autopilot at the end of the maneuver
 
+        with threadLock:
+            lastCommand = "x"
+            speedVector = [0, 0]
+            dataReady = True
+
     def turn(self,angleChange):
         global lastCommand
         global speedVector
@@ -764,7 +784,7 @@ class autoPilotThread(MultiThreadBase):
                 dataReady = True
             elif direction == "b":
                 lastCommand = "b"
-                speedVector = [self.autoSpeed, self.autoSpeed]
+                speedVector = [-self.autoSpeed, -self.autoSpeed]
                 dataReady = True
 
         initLoc = porterLocation_Global
@@ -813,10 +833,10 @@ class autoPilotThread(MultiThreadBase):
     def envCheck(self):
         #self.envScore = []
 
-        envScore = [10 * numpy.exp(-2 * USAvgDistances[0] / 10),
-                    10 * numpy.exp(-2 * USAvgDistances[5] / 10),
-                    10 * numpy.exp(-2 * USAvgDistances[3] / 10),
-                    10 * numpy.exp(-2 * USAvgDistances[4] / 10)]
+        envScore = [-200/USAvgDistances[0] + 10,
+                    -5000 / USAvgDistances[5] + 10,
+                    -500 / USAvgDistances[3] + 10,
+                    -500 / USAvgDistances[4] + 10]
         #Exponential mapping of distance
 
         print("environment score is " + str(envScore) + " max env score is " + str(max(envScore)) + " at " +
@@ -1362,6 +1382,9 @@ class usDataThread(MultiThreadBase):
                 elif obstruction != False:
                     with threadLock:
                         obstruction = False
+            elif lastCommand == "x":
+                with threadLock:
+                    obstruction = False
         except Exception as e:
             self.errorCount += 1
             logging.error("%s", str(e))
@@ -1408,6 +1431,7 @@ def porterSpeech(speechQueue,exitFlag):
 def cameraProcess():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
     pass
 
+
 class CameraThreadClass(MultiThreadBase):
     def __init__(self, threadID, name):
         threading.Thread.__init__(self)
@@ -1418,14 +1442,13 @@ class CameraThreadClass(MultiThreadBase):
         self.vanishy = [0, 0, 0, 0, 0]
         self.vanishxVar = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.vanishyVar = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.profiling = True
 
     def run(self):
         global cam
 
-        if cam:
-            self.vpFromCam()
-        else:
-            self.vpFromVid()
+        self.vpFromCAM()
+
 
     def mAverage(self, vpCoord, n):
         i = 0
@@ -1440,6 +1463,7 @@ class CameraThreadClass(MultiThreadBase):
         i = 0
         #global vpValid
 
+        vanish = [0.,0.]
 
         if len(vpCoord) == 2:
             self.vanishx[0] = self.vanishx[1]
@@ -1454,22 +1478,9 @@ class CameraThreadClass(MultiThreadBase):
             self.vanishy[3] = self.vanishy[4]
             self.vanishy[4] = vpCoord[1]
 
-            #print "Unsorted" , self.vanishx, self.vanishy
             sortedx = sorted(self.vanishx)
             sortedy = sorted(self.vanishy)
 
-            #medVar = np.var(self.vanishx), np.var(self.vanishy)
-
-            #print medVar
-
-            #if (medVar[0] > 100) or (medVar[1] > 100):
-            #    vpValid = 0
-            #else:
-            #    vpValid = 1
-
-
-
-            #print "Sorted" , sortedx, sortedy
             vanish = (sortedx[2],sortedy[2])
 
         return vanish
@@ -1485,138 +1496,99 @@ class CameraThreadClass(MultiThreadBase):
         self.vanishxVar[n - 1] = vpCoord[0]
         self.vanishyVar[n - 1] = vpCoord[1]
 
-        medVar = np.var(self.vanishxVar), np.var(self.vanishyVar)
+        medVar = numpy.var(self.vanishxVar), numpy.var(self.vanishyVar)
 
-        if (medVar[0] > 100) or (medVar[1] > 100):
+        if (medVar[0] > 150) or (medVar[1] > 150):
             vpValid = 0
         else:
             vpValid = 1
 
         return 0
 
-    def vpFromCam(self):
-        global vanish
-        capWebcam = cv2.VideoCapture(0)  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
-        if capWebcam.isOpened() == False:  # check if VideoCapture object was associated to webcam successfully
-            print "error: capWebcam not accessed successfully\n\n"  # if not, print error message
-            #logging.error("error: capWebcam not accessed successfully\n\n")
-            os.system("pause")
-
-        img2 = np.zeros((540, 960, 3), np.uint8)
-
-        while cv2.waitKey(1) != 27 and capWebcam.isOpened():
-            blnFrameReadSuccessfully, img = capWebcam.read()
-
-            try: #try to find vanishing point
-                hough_lines = hough_transform(img, False)  #calculate hough lines
-                if hough_lines: #if lines found
-                    random_sample = getLineSample(hough_lines, 100)  # take a sample of 100 lines
-                    intersections = find_intersections(hough_lines, img)  # Find intersections in the sample
-                    if intersections:  # if intersections are found
-                        grid_size[0] = img.shape[0] // 10 #set the grid size to be 20 by 20
-                        grid_size[1] = img.shape[1] // 20
-                        #find vanishing points
-                        vanishing_point = vp_candidates(img, grid_size, intersections)
-                        #returns the best cell
-
-                        vanish2 = self.medianFilter(vanishing_point[0], 4)
-                        vanish = self.mAverage(vanish2, 3)
-                        # print vanishing_point[0], vanish
-
-                        cv2.circle(img, (vanish[0], 100), 5, (10, 10, 255), thickness=2)
-                        cv2.circle(img, (vanish2[0], 100), 5, (210, 255, 10), thickness=2)
-
-                        cv2.circle(img2, (vanish[0], vanish[1]), 1, (10, 10, 255), thickness=2)
-                        cv2.circle(img2, (vanish2[0], vanish2[1]), 1, (210, 255, 10), thickness=2)
-                        # cv2.drawMarker(img2, (vanish[0], vanish[1]), (10, 10, 255))
-                        # cv2.drawMarker(img2, (vanish2[0], vanish2[1]), (210, 255, 10))
-
-                cv2.imshow('vp Image', img)
-                cv2.imshow('img2', img2)
-
-            except Exception as e:
-                print ("Error - " + str(e))
-
-        cv2.destroyAllWindows()
-
-    def vpFromImg(self):
-        filepath = "cor_in.jpg"
-
-        img = cv2.imread(filepath)
-        img = cv2.resize(img, (0, 0), fx=0.2, fy=0.2)
-
-        #try:
-        hough_lines = hough_transform(img, False) #
-        if hough_lines:
-            random_sample = getLineSample(hough_lines, 100) #take a sample of n lines
-            intersections = find_intersections(random_sample, img) #Find intersections in the sample
-            if intersections: #if intersections are found
-                grid_rows = 2
-                grid_columns = 5
-
-                grid_size[0] = img.shape[0] //10
-                grid_size[1] = img.shape[1] //20
-                vanishing_point = vp_candidates(img, grid_size, intersections)
-                print str(vanishing_point)
-                #cv2.rectangle(img, (100, 100), (150, 150), (0, 255, 0), 2)
-                cv2.circle(img, vanishing_point[0], 5, (10,10,10),thickness=2)
-                cv2.imshow('vp Image',img)
-
-        cv2.waitKey(0) != 27
-        cv2.destroyAllWindows()
-
-    def vpFromVid(self):
+    def vpFromCAM(self):
         global vanish
 
-        img2 = np.zeros((540, 960, 3), np.uint8)
-        img3 = np.zeros((540, 960, 3), np.uint8)
-        capVid = cv2.VideoCapture('cor2small.mp4')  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
+        capVid = cv2.VideoCapture(0)
+
+        #capVid = cv2.VideoCapture('cor2small.mp4')  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
+
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        outvid = cv2.VideoWriter('output.avi', fourcc, 5.0, (640,480))
 
         if capVid.isOpened() == False:  # check if VideoCapture object was associated to webcam successfully
-            #print "error: capVid not accessed successfully\n\n"  # if not, print error message
-            logging.error("error: capWebcam not accessed successfully\n\n")
+            print "error: capVid not accessed successfully\n\n"  # if not, print error message
+            #logging.error("error: capWebcam not accessed successfully\n\n")
             os.system("pause")
 
         while cv2.waitKey(1) != 27 and capVid.isOpened():
             blnFrameReadSuccessfully, img = capVid.read()
+            #origimg = img
+            startTime = time.time()
+            sumTime = 0
+            outvid.write(img)
+
+            print "Image Loaded: " + str(startTime)
+
+            # if len(frameNumber) > 0:
+            #     frameNumber.append(frameNumber[len(frameNumber) - 1] + 1)
+            # else:
+            #     frameNumber[0] = 1
 
             try: #try to find vanishing point
-                hough_lines = hough_transform(img, False)  #calculate hough lines
+                hough_lines, startTime, sumTime = vpLib.hough_transform(img, False, startTime, self.profiling)  #calculate hough lines
+
                 if hough_lines: #if lines found
-                    random_sample = getLineSample(hough_lines, 30)  # take a sample of 100 lines
-                    intersections = find_intersections(random_sample, img)  # Find intersections in the sample
+                    random_sample = vpLib.getLineSample(hough_lines, 30)  # take a sample of 100 line
+                    intersections = vpLib.find_intersections(random_sample, img)  # Find intersections in the sample
+
+                    if self.profiling:
+                        duration = time.time() - startTime
+                        print "Intersection Time :" + str(duration)
+                        sumTime += duration
+                        startTime = time.time()
+
                     if intersections:  # if intersections are found
                         grid_size[0] = img.shape[0] // 8 #set the grid size to be 20 by 20
                         grid_size[1] = img.shape[1] // 20
                         #find vanishing points
-                        vanishing_point = vp_candidates(img, grid_size, intersections)
+                        vanishing_point = vpLib.vp_candidates(img, grid_size, intersections)
                         #returns the best cell
 
-                        #vanish2 = self.medianFilter(vanishing_point[0], 4)
                         vanish2 = self.medianFilter(vanishing_point[0], 5)
-                        #vanish3 = self.mAverage(vanish2, 5)
-                        #print vanishing_point[0], vanish
-
                         x = self.varianceFilter(vanishing_point[0], 10)
 
                         if vpValid == 1:
                             cv2.circle(img, (vanish2[0], vanish2[1]), 5, (210, 255, 10), thickness=2)
-                            #cv2.circle(img, (vanish2[0], 100), 5, (210, 255, 10), thickness=2)
                         else:
                             cv2.circle(img, (vanish2[0], vanish2[1]), 5, (10, 10, 255), thickness=2)
-                            #cv2.circle(img2, (vanish[0], vanish[1]), 1, (10, 10, 255), thickness=2)
-                            #cv2.circle(img2, (vanish2[0], vanish2[1]), 1, (210, 255, 10), thickness=2)
-                            #cv2.drawMarker(img2, (vanish[0], vanish[1]), (10, 10, 255))
-                            #cv2.drawMarker(img2, (vanish2[0], vanish2[1]), (210, 255, 10))
 
                 cv2.imshow('vp Image', img)
-                cv2.imshow('img2', img2)
 
+                if self.profiling:
+                    duration = time.time() - startTime
+                    print "Finish Time :" + str(duration)
+                    sumTime += duration
+                    startTime = time.time()
+
+                expectedFPS = 1/sumTime
+
+                print "Expected FPS: " + str(expectedFPS)
+
+                #fps.append(expectedFPS)
+                # plt.plot(frameNumber, fps)
+                # plt.pause(0.05)
+
+                print "----------------------------------------------"
 
             except Exception as e:
-                print ("Error - " + str(e))
+                pass
+
+        capVid.release()
+        outvid.release()
 
         cv2.destroyAllWindows()
+
+
 
 ###---Function Definitions
 
@@ -1667,7 +1639,7 @@ def cmdToSpeeds(inputCommand): #convert commands to speed vectors for manual con
     elif inputCommand[0] == "l":
         return -(mSpeed-5), (mSpeed-5)
 
-def get_ip_address(ifname):
+def get_ip_address(ifname): #Who is this code based on?
     if (platform == "linux") or (platform == "linux2"):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         logging.info("Resolving ip address")
@@ -1929,11 +1901,25 @@ if __name__ == '__main__':
                             if dataReady != False:
                                 with threadLock:
                                     dataReady = False
+                    elif dataInput[0] == "o":
+                        if not autoPilot:
+                            logging.info("Resetting Orientation and location")
+                            orientationWheels.value = 0
+                            porterLocation_Global[0] = 0
+                            porterLocation_Global[1] = 0
+                        else:
+                            logging.info("Cant reset localisation. Autopilot engaged.")
+                    elif dataInput[0] == "p":
+                        print "Porter Location is " + str(porterLocation_Global)
+                        print "Porter Orientation is " + str(porterOrientation)
+                        print "Target is " + str(targetDestination)
+
                     else:
                         if dataReady != False:
                             with threadLock:
                                 dataReady = False
                         logging.info("Invalid Command")
+
 
             dataInput = ""
             print ("")

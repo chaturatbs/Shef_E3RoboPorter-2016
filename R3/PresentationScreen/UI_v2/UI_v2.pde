@@ -447,7 +447,7 @@ public class PositionApplet extends PApplet {
     // Setup the mouse actions
     positionPlot.activateZooming();
     positionPlot.activatePanning();
-    positionPlot.lockAxes();
+
   }
 
 
@@ -536,7 +536,8 @@ public class HeuristicApplet extends PApplet {
     strokeWeight(1);
 
     mAverage(7);
-
+    print(AvgHscores);
+    
     rect(40, 40, (int)AvgHscores[0], 30);
     rect(40, 90, (int)AvgHscores[2], 30);
     rect(40, 140, (int)AvgHscores[3], 30);
