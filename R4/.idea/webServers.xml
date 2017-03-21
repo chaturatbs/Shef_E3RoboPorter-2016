@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="696ee7d5-3e3c-4d0a-919b-da166e98e81d" name="roboporter" url="http://192.168.20.23">
+        <fileTransfer host="192.168.20.23" port="21" rootFolder="/home/pi">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" />
+          </advancedOptions>
+          <option name="port" value="21" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
