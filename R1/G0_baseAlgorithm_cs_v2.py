@@ -8,8 +8,8 @@ import cv2
 import matplotlib as mpl
 from matplotlib import pyplot
 
-recPenalty = 0.2
-momentumBonus = 0.1
+recPenalty = 1
+momentumBonus = 0
 tempX = 0
 tempY = 0
 
@@ -24,8 +24,8 @@ class agent:
     distScore = []
     score = []
     pathmemory = []
-    alpha = 1
-    beta = 10
+    alpha = 10
+    beta = 100
 
     def __init__(self):
         locX = 0
@@ -243,6 +243,7 @@ Abase = copy.deepcopy(A)
 
 
 fig = mpl.pyplot.figure()
+#mpl.pyplot.ion()
 cmap = mpl.colors.ListedColormap(['gray','magenta','cyan','blue', 'green', 'black', 'red'])
 bounds=[-100,-9,-3*float(recPenalty), -2*float(recPenalty), -1*float(recPenalty), 0, 2, 6]
 norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
@@ -273,7 +274,7 @@ mpl.pyplot.show()
 
 cat.setpos(int(round(tempY)),int(round(tempX)))
 
-motionPath = copy.deepcopy(A)
+#motionPath = copy.deepcopy(A)
 start = time.time()
 
 # print("The current environment...")
@@ -293,7 +294,7 @@ cat.finddist()
 
 
 print("Cat is at " + str(cat.locX) + "," + str(cat.locY) + " at a distance " + "{0:.2f}".format(cat.dist) + " to goal")
-motionPath[cat.locX][cat.locY] = "X"
+#motionPath[cat.locX][cat.locY] = "X"
 nodeList[0].append(cat.locX)
 nodeList[1].append(cat.locY)
 
@@ -304,7 +305,12 @@ nodeList[1].append(cat.locY)
 #     i += 1
 
 #cat.checkquad(A)
-
+#
+# img2 = mpl.pyplot.imshow(A, interpolation='nearest',cmap=cmap, norm=norm)
+#
+# mpl.pyplot.colorbar(img2, cmap=cmap, norm=norm, boundaries=bounds, ticks=[-5, 0, 5])
+#
+# mpl.pyplot.show()
 
 while True:
     if cat.locX == cat.destX and cat.locY == cat.destY:
@@ -316,7 +322,7 @@ while True:
     cat.checkquad(A)
     path.append(cat.score.index(max(cat.score)))
     cat.pathmemory.append(cat.score.index(max(cat.score)))
-    motionPath[cat.locX][cat.locY] = putmarker(int(path[len(path)-1]))
+    #motionPath[cat.locX][cat.locY] = putmarker(int(path[len(path)-1]))
     A[cat.locX][cat.locY] = A[cat.locX][cat.locY] - recPenalty
 
     #print("The current environment...")
@@ -326,7 +332,7 @@ while True:
     #    i += 1
 
     cat.move(path[len(path)-1], 0)
-    motionPath[cat.locX][cat.locY] = "X"
+    #motionPath[cat.locX][cat.locY] = "X"
     nodeList[0].append(cat.locX)
     nodeList[1].append(cat.locY)
     #print("Motion Path... ")
@@ -340,6 +346,7 @@ while True:
     print("path is " + str(len(path)) + " steps long - " + str(path))
     print("__________________________________________")
 
+    #mpl.pyplot.draw()
 
 #Anew = numpy.subtract(A, Abase)
 #Anew = -10*Anew

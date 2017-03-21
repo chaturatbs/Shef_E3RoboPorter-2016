@@ -48,6 +48,14 @@ except Exception as e:
 
 ###---Global Variables-------------
 
+##--Setup
+
+US_Enable = False
+Motor_Enable = False
+Cam_Enable = False
+Speech_Enable = False
+Debug_Enable = False
+
 
 ##--Motor Commands
 global lastCommand #holds the last command that was sent to the motor controllers
@@ -57,6 +65,7 @@ global wheelSpeeds #measured wheel speeds
 
 lastCommand = ""
 speedVector = [0, 0]
+setSpeedVector = [0,0]
 lastSent = [0, 0]
 
 dataReady = False
@@ -112,6 +121,10 @@ global cam
 global vanish
 global vpValid
 
+vpValid = multiprocessing.Value('b', False)
+vanish = multiprocessing.Value("d",0)
+
+
 #fps = [0]
 #frameNumber = [0]
 
@@ -123,6 +136,8 @@ imuEnable = multiprocessing.Value('b', False)
 ##--Auto Pilot
 global autoPilot #Boolean for turning on/off autopilot
 autoPilot = False #autopilot turned off
+global pidEnable
+pidEnable = False
 
 # -Porter Localisation
 
@@ -395,10 +410,13 @@ class autoPilotThread(MultiThreadBase):
         self.obs = False
         self.distQuantise = 30  # path re-calculation distance
         self.autoSpeed = 10  # autopilot movement speed
-        self.alignmentThreshold = 5  # alignment error in degrees
+        self.alignmentThreshold = 10  # alignment error in degrees
         self.hScores = []
         self.bestScoreIndex = 0
         self.distThreshold = 20
+
+        self.PID_Tuning = (0.01, 0.01, 0)
+        self.vanishsum = 0
 
     def run(self):
         global threadLock
@@ -411,6 +429,7 @@ class autoPilotThread(MultiThreadBase):
         global targetDestination
         global autoPilot
         global h_scores
+        global pidEnable
 
         while not exitFlag.value: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
@@ -525,17 +544,19 @@ class autoPilotThread(MultiThreadBase):
 
                     print "Angle change is " + str(self.angleChange)
 
-                    if autoPilot and not exitFlag.value and (abs(self.angleChange) > self.alignmentThreshold):
-                        with threadLock:
-                            if self.angleChange > self.alignmentThreshold:
-                                lastCommand = "r"
-                                speedVector = [self.autoSpeed, -self.autoSpeed]
-                                dataReady = True
-                            elif self.angleChange < self.alignmentThreshold:
-                                lastCommand = "l"
-                                speedVector = [-self.autoSpeed, self.autoSpeed]
-                                dataReady = True
-
+                    if autoPilot and not exitFlag.value:
+                        if (abs(self.angleChange) > self.alignmentThreshold):
+                            with threadLock:
+                                if self.angleChange > self.alignmentThreshold:
+                                    lastCommand = "r"
+                                    speedVector = [self.autoSpeed, -self.autoSpeed]
+                                    dataReady = True
+                                elif self.angleChange < self.alignmentThreshold:
+                                    lastCommand = "l"
+                                    speedVector = [-self.autoSpeed, self.autoSpeed]
+                                    dataReady = True
+                        else:
+                            pidEnable = True
                         # wait till its aligned
                         while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  # Add boundaries
                             # keep checking the angle
@@ -596,6 +617,7 @@ class autoPilotThread(MultiThreadBase):
                 speechQueue.put("Successfully arrived at the target")
                 logging.info("Successfully arrived at the target")
                 autoPilot = False  # turn off autopilot at the end of the maneuver
+                pidEnable = False
 
             else: #if in autopilot mode...
                 porterLocation_Global = porterLocation_Local # for now assume local position is the same as global
@@ -744,6 +766,9 @@ class autoPilotThread(MultiThreadBase):
             speedVector = [0, 0]
             dataReady = True
 
+        autoPilot = False
+        pidEnable = False
+
     def turn(self,angleChange):
         global lastCommand
         global speedVector
@@ -770,7 +795,6 @@ class autoPilotThread(MultiThreadBase):
             lastCommand = "x"
             speedVector = [0, 0]
             dataReady = True
-
 
     def moveStraight(self,dist,direction): #direction can be "f" or "b"
         global lastCommand
@@ -1428,165 +1452,217 @@ def porterSpeech(speechQueue,exitFlag):
     engine.say("Shutting down")
     engine.runAndWait()
 
-def cameraProcess():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
-    pass
+# def ():  # QR codes and other camera related stuff if doing optical SLAM use a different thread
+#     pass
 
-
-class CameraThreadClass(MultiThreadBase):
+class PIDThreadClass(MultiThreadBase):
     def __init__(self, threadID, name):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.pulseData = ["",""] #pulses counted by the motor controller
-        self.vanishx = [0, 0, 0, 0, 0]
-        self.vanishy = [0, 0, 0, 0, 0]
-        self.vanishxVar = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.vanishyVar = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.profiling = True
+        self.PID_Tuning = (0.01, 0.01, 0)
+        self.vanishsum = 0
 
     def run(self):
-        global cam
-
-        self.vpFromCAM()
-
-
-    def mAverage(self, vpCoord, n):
-        i = 0
-
-        if len(vpCoord) == 2:
-            for i in range(0, 2):
-                vanish[i] += (int(vpCoord[i]) - vanish[i]) / n
-
-        return vanish
-
-    def medianFilter(self, vpCoord, n):
-        i = 0
-        #global vpValid
-
-        vanish = [0.,0.]
-
-        if len(vpCoord) == 2:
-            self.vanishx[0] = self.vanishx[1]
-            self.vanishx[1] = self.vanishx[2]
-            self.vanishx[2] = self.vanishx[3]
-            self.vanishx[3] = self.vanishx[4]
-            self.vanishx[4] = vpCoord[0]
-
-            self.vanishy[0] = self.vanishy[1]
-            self.vanishy[1] = self.vanishy[2]
-            self.vanishy[2] = self.vanishy[3]
-            self.vanishy[3] = self.vanishy[4]
-            self.vanishy[4] = vpCoord[1]
-
-            sortedx = sorted(self.vanishx)
-            sortedy = sorted(self.vanishy)
-
-            vanish = (sortedx[2],sortedy[2])
-
-        return vanish
-
-    def varianceFilter(self, vpCoord, n):
+        global setSpeedVector
+        global speedVector
+        global pidEnable
         global vpValid
-        i = 0
-
-        for i in range(0, n - 1):
-            self.vanishxVar[i] = self.vanishxVar[i + 1]
-            self.vanishyVar[i] = self.vanishyVar[i + 1]
-
-        self.vanishxVar[n - 1] = vpCoord[0]
-        self.vanishyVar[n - 1] = vpCoord[1]
-
-        medVar = numpy.var(self.vanishxVar), numpy.var(self.vanishyVar)
-
-        if (medVar[0] > 150) or (medVar[1] > 150):
-            vpValid = 0
-        else:
-            vpValid = 1
-
-        return 0
-
-    def vpFromCAM(self):
         global vanish
 
-        capVid = cv2.VideoCapture(0)
+        threading.Timer(0.5, self.run).start()
 
-        #capVid = cv2.VideoCapture('cor2small.mp4')  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
+        if pidEnable and vpValid.Value:
 
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        outvid = cv2.VideoWriter('output.avi', fourcc, 5.0, (640,480))
+            self.vanishsum += vanish.Value
+            offset = (self.PID_Tuning[0] * vanish.Value) + (self.PID_Tuning[1] * self.vanishsum)
 
-        if capVid.isOpened() == False:  # check if VideoCapture object was associated to webcam successfully
-            print "error: capVid not accessed successfully\n\n"  # if not, print error message
-            #logging.error("error: capWebcam not accessed successfully\n\n")
-            os.system("pause")
+            if offset >= 0:
+                speedVector = [int(setSpeedVector[0] - offset), setSpeedVector[1]]
+            else:
+                speedVector = [setSpeedVector[0], int(setSpeedVector[1] + offset)]
 
-        while cv2.waitKey(1) != 27 and capVid.isOpened():
-            blnFrameReadSuccessfully, img = capVid.read()
-            #origimg = img
-            startTime = time.time()
-            sumTime = 0
-            outvid.write(img)
+        else:
+            self.vanishsum = 0
+            speedVector = setSpeedVector
 
-            print "Image Loaded: " + str(startTime)
+        with threadLock:
+            dataReady = True
 
-            # if len(frameNumber) > 0:
-            #     frameNumber.append(frameNumber[len(frameNumber) - 1] + 1)
-            # else:
-            #     frameNumber[0] = 1
 
-            try: #try to find vanishing point
-                hough_lines, startTime, sumTime = vpLib.hough_transform(img, False, startTime, self.profiling)  #calculate hough lines
 
-                if hough_lines: #if lines found
-                    random_sample = vpLib.getLineSample(hough_lines, 30)  # take a sample of 100 line
-                    intersections = vpLib.find_intersections(random_sample, img)  # Find intersections in the sample
+        #print datetime.datetime.now(), adjustedSpeed
 
-                    if self.profiling:
-                        duration = time.time() - startTime
-                        print "Intersection Time :" + str(duration)
-                        sumTime += duration
-                        startTime = time.time()
+# class CameraThreadClass(MultiThreadBase):
+#     def __init__(self, threadID, name):
+#         threading.Thread.__init__(self)
+#         self.threadID = threadID
+#         self.name = name
+#         self.pulseData = ["",""] #pulses counted by the motor controller
+#         self.vanishx = [0, 0, 0, 0, 0]
+#         self.vanishy = [0, 0, 0, 0, 0]
+#         self.vanishxVar = []
+#         self.vanishyVar = []
+#         self.profiling = True
+#
+#     def run(self):
+#         global cam
+#         self.vpFromCAM()
 
-                    if intersections:  # if intersections are found
-                        grid_size[0] = img.shape[0] // 8 #set the grid size to be 20 by 20
-                        grid_size[1] = img.shape[1] // 20
-                        #find vanishing points
-                        vanishing_point = vpLib.vp_candidates(img, grid_size, intersections)
-                        #returns the best cell
 
-                        vanish2 = self.medianFilter(vanishing_point[0], 5)
-                        x = self.varianceFilter(vanishing_point[0], 10)
+def vpFromCam():
+    global vanish
+    global vpValid
 
-                        if vpValid == 1:
-                            cv2.circle(img, (vanish2[0], vanish2[1]), 5, (210, 255, 10), thickness=2)
-                        else:
-                            cv2.circle(img, (vanish2[0], vanish2[1]), 5, (10, 10, 255), thickness=2)
+    profiling = False
+    vanishx = [0,0,0]
+    vanishy = [0,0,0]
+    varx = [0, 0, 0, 0, 0]
+    vary = [0, 0, 0, 0, 0]
+    capVid = cv2.VideoCapture(0)
 
-                cv2.imshow('vp Image', img)
+    #capVid = cv2.VideoCapture('testOutsideLab.avi')  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
-                if self.profiling:
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    outvid = cv2.VideoWriter('output.avi', fourcc, 5.0, (640,480))
+
+    while not capVid.isOpened():
+        pass
+
+    centre_point = capVid.read()[1].shape[1] / 2
+
+    if capVid.isOpened() == False:  # check if VideoCapture object was associated to webcam successfully
+        print "error: capVid not accessed successfully\n\n"  # if not, print error message
+        #logging.error("error: capWebcam not accessed successfully\n\n")
+        os.system("pause")
+
+    while cv2.waitKey(1) != 27 and capVid.isOpened():
+        blnFrameReadSuccessfully, img = capVid.read()
+        #origimg = img
+        startTime = time.time()
+        sumTime = 0
+        #outvid.write(img)
+
+        #print "Image Loaded: " + str(startTime)
+
+        # if len(frameNumber) > 0:
+        #     frameNumber.append(frameNumber[len(frameNumber) - 1] + 1)
+        # else:
+        #     frameNumber[0] = 1
+
+        try: #try to find vanishing point
+            hough_lines, startTime, sumTime = vpLib.hough_transform(img, False, startTime, profiling)  #calculate hough lines
+            #print str(hough_lines)
+            if hough_lines: #if lines found
+                random_sample = vpLib.getLineSample(hough_lines, 30)  # take a sample of 100 line
+                intersections = vpLib.find_intersections(random_sample, img)  # Find intersections in the sample
+
+                if profiling:
                     duration = time.time() - startTime
-                    print "Finish Time :" + str(duration)
+                    print "Intersection Time :" + str(duration)
                     sumTime += duration
                     startTime = time.time()
 
-                expectedFPS = 1/sumTime
+                #print str(intersections)
+                if intersections:  # if intersections are found
+                    grid_size[0] = img.shape[0] // 8 #set the grid size to be 20 by 20
+                    grid_size[1] = img.shape[1] // 20
+                    #find vanishing points
+                    vanishing_point = vpLib.vp_candidates(img, grid_size, intersections)
+                    #returns the best cell
+                    #print vanishing_point
+                    vanish2, vanishx, vanishy = medianFilter(vanishing_point[0], 3, vanishx, vanishy)
+                    varx, vary = varianceFilter(vanishing_point[0], 5, varx, vary)
 
-                print "Expected FPS: " + str(expectedFPS)
+                    if vpValid.Value == 1:
+                        cv2.circle(img, (vanish2[0], vanish2[1]), 5, (210, 255, 10), thickness=2)
+                    else:
+                        cv2.circle(img, (vanish2[0], vanish2[1]), 5, (10, 10, 255), thickness=2)
 
-                #fps.append(expectedFPS)
-                # plt.plot(frameNumber, fps)
-                # plt.pause(0.05)
+                    vanish.Value = int(vanish2[0]-centre_point)
+                else:
+                    vpValid.Value = 0
+            else:
+                vpValid.Value = 0
+            cv2.imshow('vp Image', img)
 
-                print "----------------------------------------------"
+            #time.sleep(0.25)
 
-            except Exception as e:
-                pass
+            if profiling:
+                duration = time.time() - startTime
+                print "Finish Time :" + str(duration)
+                sumTime += duration
+                startTime = time.time()
 
-        capVid.release()
-        outvid.release()
+            expectedFPS = 1/sumTime
 
-        cv2.destroyAllWindows()
+            print "Expected FPS: " + str(expectedFPS)
+
+            #fps.append(expectedFPS)
+            # plt.plot(frameNumber, fps)
+            # plt.pause(0.05)
+
+            print "----------------------------------------------"
+
+        except Exception as e:
+            pass
+
+    capVid.release()
+    outvid.release()
+
+    cv2.destroyAllWindows()
+
+
+def medianFilter(vpCoord, n, vanishx, vanishy):
+    i = 0
+    #global vpValid
+
+    vanish = [0.,0.]
+    #print len(vpCoord)
+    if len(vpCoord) == 2:
+        #print vpCoord
+        #print vanishx, vanishy
+        vanishx[0] = vanishx[1]
+        vanishx[1] = vanishx[2]
+        vanishx[2] = vpCoord[0]
+
+        vanishy[0] = vanishy[1]
+        vanishy[1] = vanishy[2]
+        vanishy[2] = vpCoord[1]
+
+        sortedx = sorted(vanishx)
+        sortedy = sorted(vanishy)
+
+        medVanish = (sortedx[1],sortedy[1])
+
+
+    return medVanish, vanishx, vanishy
+
+def varianceFilter(vpCoord, n, varx, vary):
+    global vpValid
+    i = 0
+
+    while (len(varx) < n):
+        varx.append(0)
+
+    while (len(vary) < n):
+        vary.append(0)
+
+    for i in range(0, n - 1):
+        varx[i] = varx[i + 1]
+        vary[i] = vary[i + 1]
+
+    varx[n - 1] = vpCoord[0]
+    vary[n - 1] = vpCoord[1]
+
+    medVar = numpy.var(varx[0:n-1]), numpy.var(vary[0:n-1])
+
+    if (medVar[0] > 1000) or (medVar[1] > 150):
+        vpValid.Value = 0
+    else:
+        vpValid.Value = 1
+
+    return varx, vary
 
 
 
@@ -1700,6 +1776,11 @@ if __name__ == '__main__':
     speechThread.start()
     threads.append(speechThread)
 
+    # #logging.info("Starting speech Thread...")
+    # camThread = CameraThreadClass(2, "cam Thread")
+    # camThread.start()
+    # threads.append(camThread )
+
     speechQueue.put("initialising")
     #time.sleep(2)
     #speechQueue.put("trying to run Tracker")
@@ -1711,11 +1792,18 @@ if __name__ == '__main__':
     processes.append(trackerProcess)
     speechQueue.put("Tracker Running")
 
+
     #Start Autopilot thread
     logging.info("Starting Autopilot Thread")
     autoPilotThread = autoPilotThread(3, "Auto Pilot Thread")
     autoPilotThread.start()
     threads.append(autoPilotThread)
+
+    # #Start Autopilot thread
+    # logging.info("Starting PID Thread")
+    # PIDThread = PIDThreadClass(4, "PID Pilot Thread")
+    # PIDThread.start()
+    # threads.append(PIDThread)
 
     # try to run Debug server if the user wants it
     dataInput = raw_input("Start Debug server... ? (y/n)")
@@ -1805,6 +1893,13 @@ if __name__ == '__main__':
     else:
         logging.debug("Local Control mode")
 
+    #
+    # logging.info("Starting Cam Process")
+    # cameraProcess = multiprocessing.Process(name="CAM Process", target=vpFromCam(), args=())
+    # cameraProcess.start()
+    # processes.append(cameraProcess)
+    # speechQueue.put("Camera Process Running")
+
     # Main Control Loop
     while sysRunning: #while the main loop is not in shutdown mode...
         logging.debug("System is running")
@@ -1847,6 +1942,7 @@ if __name__ == '__main__':
                             lastCommand = dataInput[0]
                             # commandToTrans()
                             speedVector = cmdToSpeeds(dataInput)
+                            setSpeedVector = copy.deepcopy(speedVector)
                             dataReady = True
 
                         if lastCommand == "m":
