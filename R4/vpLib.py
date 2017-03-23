@@ -9,13 +9,14 @@ import operator
 
 
 # Perform edge detection
-def hough_transform(img, probabilistic, startTime, profiling):
+def hough_transform(img, probabilistic, startTime, profiling, verbose):
     sumTime = 0
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Convert image to grayscale
 
     if profiling:
         duration = time.time() - startTime
-        print "Gray Time :" + str(duration)
+        if verbose:
+            print "Gray Time :" + str(duration)
         sumTime += duration
         startTime = time.time()
 
@@ -26,7 +27,8 @@ def hough_transform(img, probabilistic, startTime, profiling):
 
     if profiling:
         duration = time.time() - startTime
-        print "Morph Time :" + str(duration)
+        if verbose:
+            print "Morph Time :" + str(duration)
         sumTime += duration
         startTime = time.time()
 
@@ -36,17 +38,19 @@ def hough_transform(img, probabilistic, startTime, profiling):
 
     if profiling:
         duration = time.time() - startTime
-        print "Canny Time :" + str(duration)
+        if verbose:
+            print "Canny Time :" + str(duration)
         sumTime += duration
         startTime = time.time()
 
     #Standard Hough transform
-    lines = cv2.HoughLines(edges, 1, np.pi / 180, 100)
+    lines = cv2.HoughLines(edges, 1, np.pi / 180, 50)
     hough_lines = []
 
     if profiling:
         duration = time.time() - startTime
-        print "Lines Time :" + str(duration)
+        if verbose:
+            print "Lines Time :" + str(duration)
         sumTime += duration
         startTime = time.time()
 
@@ -79,7 +83,8 @@ def hough_transform(img, probabilistic, startTime, profiling):
 
     if profiling:
         duration = time.time() - startTime
-        print "Cart Time :" + str(duration)
+        if verbose:
+            print "Cart Time :" + str(duration)
         sumTime += duration
         startTime = time.time()
 

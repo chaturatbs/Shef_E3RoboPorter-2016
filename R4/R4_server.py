@@ -7,6 +7,7 @@
 # Modified   - 21/03/2017
 #
 ###---Imports-------------------
+
 import socket
 import serial
 import struct
@@ -22,9 +23,12 @@ import glob
 import datetime
 import copy
 import cv2
-import zbar
 
-from msvcrt import getch
+try:
+    import zbar
+except Exception as e:
+    print str(e)
+
 
 #from vpLib import *
 
@@ -38,6 +42,11 @@ if platform == "linux" or platform == "linux2":
     import RTIMU #imu library
     import os.path
 
+else:
+    try :
+        from msvcrt import getch
+    except Exception as e:
+        print str(e)
 # -logging config
 import logging
 import logging.handlers
@@ -54,10 +63,10 @@ except Exception as e:
 
 ##--Setup
 
-US_Enable = False
-Motor_Enable = False
-Cam_Enable = False
-Speech_Enable = False
+US_Enable = True
+Motor_Enable = True
+Cam_Enable = True
+Speech_Enable = True
 Debug_Enable = False
 
 
@@ -126,10 +135,10 @@ grid_size = [0,0]
 global cam
 global vanish
 global vpValid
-
+global expectedFPS
 vpValid = multiprocessing.Value('b', False)
 vanish = multiprocessing.Value("d",0)
-
+expectedFPS = multiprocessing.Value("d", 0)
 
 #fps = [0]
 #frameNumber = [0]
@@ -144,6 +153,8 @@ global autoPilot #Boolean for turning on/off autopilot
 autoPilot = False #autopilot turned off
 global pidEnable
 pidEnable = False
+global avoidingObstacle
+avoidingObstacle = False
 
 global AHRSmode
 AHRSmode = "wheel"
@@ -421,14 +432,15 @@ class autoPilotThread(MultiThreadBase):
         self.beta = 10000
 
         #Autopilot Control parameters
-        self.looping = True
+        self.looping = True #DO NOT CHANGE THIS
         self.obs = False
         self.distQuantise = 30  # path re-calculation distance
-        self.autoSpeed = 10  # autopilot movement speed
-        self.alignmentThreshold = 10  # alignment error in degrees
+        self.autoSpeed = 20  # autopilot movement speed
+        self.turningSpeed = 10
+        self.alignmentThreshold = 20  # alignment error in degrees
         self.hScores = []
         self.bestScoreIndex = 0
-        self.distThreshold = 20
+        self.distThreshold = 40
 
         self.PID_Tuning = (0.01, 0.01, 0)
         self.vanishsum = 0
@@ -437,6 +449,7 @@ class autoPilotThread(MultiThreadBase):
         global threadLock
         global dataReady
         global speedVector
+        global setSpeedVector
         global distanceToGoal
         global porterLocation_Global
         global porterLocation_Local
@@ -446,6 +459,7 @@ class autoPilotThread(MultiThreadBase):
         global h_scores
         global pidEnable
         global nodeQueue
+        global avoidingObstacle
 
         while not exitFlag.value: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
@@ -514,8 +528,10 @@ class autoPilotThread(MultiThreadBase):
             elif self.looping: #iterative mode
 
                 if not nodeQueue.empty():
+                    print "Fetching Next Destination... "
                     targetDestination = nodeQueue.get()
                     print ("Destination is " + str(targetDestination))
+
                     if not localised.value:
                         logging.warning("Not Localised. Motion path unreliable")
                         speechQueue.put("I cant find where I am. I might run into some trouble")
@@ -533,6 +549,7 @@ class autoPilotThread(MultiThreadBase):
                     self.dY = targetDestination[1] - porterLocation_Global[1]
                     print "target = " + str(targetDestination)
                     print "location = " + str(porterLocation_Global)
+
 
                     while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > self.distThreshold and autoPilot and not exitFlag.value:
                     # find the angle of the goal from north
@@ -570,40 +587,55 @@ class autoPilotThread(MultiThreadBase):
                         print "Angle change is " + str(self.angleChange)
 
                         if autoPilot and not exitFlag.value:
-                            if (abs(self.angleChange) > self.alignmentThreshold):
-                                with threadLock:
-                                    if self.angleChange > self.alignmentThreshold:
-                                        lastCommand = "r"
-                                        speedVector = [self.autoSpeed, -self.autoSpeed]
-                                        dataReady = True
-                                    elif self.angleChange < self.alignmentThreshold:
-                                        lastCommand = "l"
-                                        speedVector = [-self.autoSpeed, self.autoSpeed]
-                                        dataReady = True
-                            else:
-                                pidEnable = True
-                            # wait till its aligned
-                            while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  # Add boundaries
-                                # keep checking the angle
-                                self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
-                                print "angle change = " + str(self.angleChange)
-                                print "Orientation = " +  str(numpy.rad2deg(porterOrientation.value))
-                                if self.angleChange < -180:
-                                    self.angleChange += 360
-                                if self.angleChange > 180:
-                                    self.angleChange -= 360
-                                time.sleep(0.01)
+                            while avoidingObstacle:
+                                time.sleep(0.2)
 
-                            # stop turning
-                            with threadLock:
-                                lastCommand = "x"
-                                speedVector = [0, 0]
-                                dataReady = True
-                                # aligned to x axis
+                            # if (abs(self.angleChange) > self.alignmentThreshold):
+                            #     pidEnable = False
+                            #     print "PID Disabled"
+                            #
+                            #     with threadLock:
+                            #         if self.angleChange > self.alignmentThreshold:
+                            #             lastCommand = "r"
+                            #             setSpeedVector = [self.turningSpeed, -self.turningSpeed]
+                            #             speedVector = [self.turningSpeed, -self.turningSpeed]
+                            #             dataReady = True
+                            #         elif self.angleChange < self.alignmentThreshold:
+                            #             lastCommand = "l"
+                            #             setSpeedVector = [-self.turningSpeed, self.turningSpeed]
+                            #             speedVector = [-self.turningSpeed, self.turningSpeed]
+                            #             dataReady = True
+                            #
+                            #     while (abs(self.angleChange) > self.alignmentThreshold) and autoPilot and not exitFlag.value:  # Add boundaries
+                            #         # keep checking the angle
+                            #         self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
+                            #         print "angle change = " + str(self.angleChange)
+                            #         print "Orientation = " +  str(numpy.rad2deg(porterOrientation.value))
+                            #         if self.angleChange < -180:
+                            #             self.angleChange += 360
+                            #         if self.angleChange > 180:
+                            #             self.angleChange -= 360
+                            #         time.sleep(0.01)
+                            #
+                            #     # stop turning
+                            #     with threadLock:
+                            #         lastCommand = "x"
+                            #         setSpeedVector = [0, 0]
+                            #         speedVector = [0, 0]
+                            #         dataReady = True
+                            #
+                            #     pidEnable = True
+                            #     print "PID Enabled"
+                            # else:
+                            if True:
+                                pidEnable = True
+                                print "PID Enabled"
+                            # wait till its aligned
+
 
                         speechQueue.put("Aligned to the target destination")
                         logging.info("Aligned to the target destination")
-                        time.sleep(1)
+                        time.sleep(0.2)
 
                         # find distance to Goal
                         distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
@@ -614,6 +646,7 @@ class autoPilotThread(MultiThreadBase):
 
                         with threadLock:
                             lastCommand = "f"
+                            setSpeedVector = [self.autoSpeed, self.autoSpeed]
                             speedVector = [self.autoSpeed, self.autoSpeed]
                             dataReady = True
 
@@ -624,18 +657,21 @@ class autoPilotThread(MultiThreadBase):
                             self.dX = targetDestination[0] - porterLocation_Global[0]
                             self.dY = targetDestination[1] - porterLocation_Global[1]
                             distanceToGoal = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
-                            print "Porter Location is " + str(porterLocation_Global)
+                            #print "Porter Location is " + str(porterLocation_Global)
                             self.dX = porterLocation_Global[0] - initLoc[0]
                             self.dY = porterLocation_Global[1] - initLoc[1]
                             self.distTravelled = numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY))
-                            print "distance Travelled is " + str(self.distTravelled)
+                            #print "distance Travelled is " + str(self.distTravelled)
                             time.sleep(0.1)
 
                         self.dX = targetDestination[0] - porterLocation_Global[0]
                         self.dY = targetDestination[1] - porterLocation_Global[1]
 
+                        logging.info("Iteration complete... Recalculating...")
+
                     with threadLock:
                         lastCommand = "x"
+                        setSpeedVector = [0, 0]
                         speedVector = [0, 0]
                         dataReady = True
 
@@ -643,12 +679,12 @@ class autoPilotThread(MultiThreadBase):
                     logging.info("Successfully arrived at the target")
 
                 else:
-                    speechQueue.put("No Nodes available")
-                    logging.info("No Nodes available")
+                    speechQueue.put("No Nodes available. Stopping Autopilot")
+                    logging.info("No Nodes available. Stopping Autopilot")
 
-                autoPilot = False  # turn off autopilot at the end of the maneuver
-                pidEnable = False
-
+                if nodeQueue.empty():
+                    autoPilot = False  # turn off autopilot at the end of the maneuver
+                    pidEnable = False
 
             else: #if in autopilot mode...
                 porterLocation_Global = porterLocation_Local # for now assume local position is the same as global
@@ -1011,7 +1047,11 @@ class debugThread(MultiThreadBase):
                     self.clientConnection.send(str(h_scores[0]) + "," )  # 31
                     self.clientConnection.send(str(h_scores[1]) + "," )
                     self.clientConnection.send(str(h_scores[2]) + "," )
-                    self.clientConnection.send(str(h_scores[3]) )  # 34
+                    self.clientConnection.send(str(h_scores[3]) + ",")  # 34
+
+                    self.clientConnection.send(str(vpValid.value) + ",") #35
+                    self.clientConnection.send(str(vanish.value) + ",")
+                    self.clientConnection.send(str(expectedFPS.vaue)) #37
 
                     self.clientConnection.send("\n")
                     # self.logOverNetwork()
@@ -1491,8 +1531,19 @@ class PIDThreadClass(MultiThreadBase):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.PID_Tuning = (0.01, 0.01, 0)
-        self.vanishsum = 0
+        self.vp_PID_Tuning = (0.04, 0.0, 0)
+        self.obs_PID_Tuning = (0.01, 0.01, 0)
+        self.side_PID_Tuning = (0.02, 0.0, 0)
+        self.vanishSum = 0
+        self.usError_front_Sum = 0
+        self.usError_front= 0
+        self.usError_front_last= 0
+        self.usError_sideL_Sum = 0
+        self.usError_sideR_Sum = 0
+        self.usError_side= 0
+        self.usError_sideL_last= 0
+        self.usError_sideR_last= 0
+
 
     def run(self):
         global setSpeedVector
@@ -1501,24 +1552,87 @@ class PIDThreadClass(MultiThreadBase):
         global vpValid
         global vanish
 
-        threading.Timer(0.5, self.run).start()
+        if not exitFlag.value:
+            threading.Timer(0.2, self.run).start()
 
-        if pidEnable and vpValid.Value:
+            if pidEnable:
+                self.usError_front = USAvgDistances[2] - USAvgDistances[1]
 
-            self.vanishsum += vanish.Value
-            offset = (self.PID_Tuning[0] * vanish.Value) + (self.PID_Tuning[1] * self.vanishsum)
+                if USAvgDistances[3] < USThresholds[1] or USAvgDistances[4] < USThresholds[1]:
+                    logging.info("side adjustment... ")
 
-            if offset >= 0:
-                speedVector = [int(setSpeedVector[0] - offset), setSpeedVector[1]]
-            else:
-                speedVector = [setSpeedVector[0], int(setSpeedVector[1] + offset)]
+                    if True: #for left
+                        logging.info("adjusting for left")
+                        self.usError_side = USAvgDistances[3] - USThresholds[1] -10
+                        self.usError_sideL_Sum += self.usError_side
+                        #self.usError_sideR_Sum = 0
 
-        else:
-            self.vanishsum = 0
-            speedVector = setSpeedVector
+                        offset = (self.side_PID_Tuning[0] * self.usError_side) + (self.side_PID_Tuning[1] * self.usError_sideL_Sum)\
+                                 + (self.side_PID_Tuning[2]*(self.usError_side-self.usError_sideL_last))
+                        offset = (offset * ((setSpeedVector[0] + setSpeedVector[1]) / 2)) / 1
 
-        with threadLock:
-            dataReady = True
+                        if offset >= 0:
+                            lastCommand = "l"
+                            speedVector = [int(setSpeedVector[0]-offset), int(setSpeedVector[1])]
+                        else:
+                            lastCommand = "r"
+                            speedVector = [int(setSpeedVector[0]), int(setSpeedVector[1]+offset)]
+
+                        self.usError_sideL_last = self.usError_side
+
+                    # if USAvgDistances[4] < USThresholds[1]: #for left
+                    #     logging.info("adjusting for right")
+                    #     self.usError_side = USThresholds[1] - USAvgDistances[4]
+                    #     #self.usError_sideR_Sum += self.usError_side
+                    #     #self.usError_sideL_Sum = 0
+                    #
+                    #     offset = (self.side_PID_Tuning[0] * self.usError_side) + (self.side_PID_Tuning[1] * self.usError_sideR_Sum) \
+                    #              + (self.side_PID_Tuning[2] * (self.usError_side - self.usError_sideR_last))
+                    #     offset = (offset * ((setSpeedVector[0] + setSpeedVector[1]) / 2)) / 1
+                    #
+                    #     lastCommand = "l"
+                    #     speedVector = [int(setSpeedVector[0] - offset), int(setSpeedVector[1])]
+                    #
+                    #     self.usError_sideR_last = self.usError_side
+
+# elif abs(self.usError_front) > 30:
+                #     self.usError_front_Sum += self.usError_front
+                #     print "us Error = " + str(self.usError_front)
+                #     avoidingObstacle = True
+                #     offset = (self.obs_PID_Tuning[0] * self.usError_front) + (self.obs_PID_Tuning[1] * self.usError_front_Sum)
+                #     offset = (offset * ((setSpeedVector[0] + setSpeedVector[1]) / 2)) / 1
+                #
+                #     if offset >= 0:
+                #         lastCommand = "r"
+                #         speedVector = [int(setSpeedVector[0]), int(setSpeedVector[1] - offset)]
+                #     else:
+                #         lastCommand = "l"
+                #         speedVector = [int(setSpeedVector[0] + offset), int(setSpeedVector[1])]
+
+                # elif vpValid.value:
+                #     #logging.info("VP Valid")
+                #     logging.info("VP adjustment")
+                #     avoidingObstacle = False
+                #     self.vanishSum += vanish.value
+                #     offset = (self.vp_PID_Tuning[0] * vanish.value) + (self.vp_PID_Tuning[1] * self.vanishSum)
+                #
+                #     offset = (offset * ((setSpeedVector[0] + setSpeedVector[1])/2)) / 10
+                #
+                #     if offset >= 0:
+                #         lastCommand = "r"
+                #         speedVector = [int(setSpeedVector[0]), int(setSpeedVector[1] - offset)]
+                #     else:
+                #         lastCommand = "l"
+                #         speedVector = [int(setSpeedVector[0] + offset), int(setSpeedVector[1])]
+                else:
+                    logging.info("VP INVALID")
+                    self.vanishSum = 0
+                    speedVector = setSpeedVector
+                    lastCommand = "f"
+                    avoidingObstacle = False
+
+            with threadLock:
+                dataReady = True
 
 
 
@@ -1654,12 +1768,13 @@ def qrCodeScanner():
             print 'RoboPorter is', "%.2fm" % D, 'away from ' '%s' % data[0]
             time.sleep(1)
 
-
 def vpFromCam():
     global vanish
     global vpValid
+    global expectedFPS
 
     profiling = False
+    verbose = False
     vanishx = [0,0,0]
     vanishy = [0,0,0]
     varx = [0, 0, 0, 0, 0]
@@ -1679,10 +1794,12 @@ def vpFromCam():
         #logging.error("error: capWebcam not accessed successfully\n\n")
         os.system("pause")
     else:
-        centre_point = capVid.read()[1].shape[1] / 2
+        centre_point = capVid.read()[1].shape[1] / 4
 
     while capVid.isOpened() and not exitFlag.value :
         blnFrameReadSuccessfully, img = capVid.read()
+
+        img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
         #origimg = img
         #print "frame read"
         startTime = time.time()
@@ -1698,7 +1815,7 @@ def vpFromCam():
         #     frameNumber[0] = 1
 
         try: #try to find vanishing point
-            hough_lines, startTime, sumTime = vpLib.hough_transform(img, False, startTime, profiling)  #calculate hough lines
+            hough_lines, startTime, sumTime = vpLib.hough_transform(img, False, startTime, profiling, verbose)  #calculate hough lines
             #print str(hough_lines)
             if hough_lines: #if lines found
                 random_sample = vpLib.getLineSample(hough_lines, 30)  # take a sample of 100 line
@@ -1706,7 +1823,8 @@ def vpFromCam():
 
                 if profiling:
                     duration = time.time() - startTime
-                    print "Intersection Time :" + str(duration)
+                    if verbose:
+                        print "Intersection Time :" + str(duration)
                     sumTime += duration
                     startTime = time.time()
 
@@ -1721,36 +1839,43 @@ def vpFromCam():
                     vanish2, vanishx, vanishy = medianFilter(vanishing_point[0], 3, vanishx, vanishy)
                     varx, vary = varianceFilter(vanishing_point[0], 5, varx, vary)
 
-                    if vpValid.Value == 1:
+                    if vpValid.value == 1:
                         cv2.circle(img, (vanish2[0], vanish2[1]), 5, (210, 255, 10), thickness=2)
                     else:
                         cv2.circle(img, (vanish2[0], vanish2[1]), 5, (10, 10, 255), thickness=2)
 
-                    vanish.Value = int(vanish2[0]-centre_point)
+                    vanish.value = int(vanish2[0]-centre_point)
                 else:
-                    vpValid.Value = 0
+                    vpValid.value = 0
             else:
-                vpValid.Value = 0
+                vpValid.value = 0
+            #
+            # print "valid vanishing point? " + str(vpValid.value)
+            # print "vanishing point = " + str(vanish.value)
 
-            cv2.imshow('vp Image', img)
+            #cv2.imshow('vp Image', img)
 
             #time.sleep(0.25)
 
             if profiling:
                 duration = time.time() - startTime
-                print "Finish Time :" + str(duration)
+                if verbose:
+                    print "Finish Time :" + str(duration)
                 sumTime += duration
                 startTime = time.time()
 
-            expectedFPS = 1/sumTime
-
-            print "Expected FPS: " + str(expectedFPS)
+            if profiling:
+                expectedFPS.value = 1/sumTime
+                print "Expected FPS: " + str(expectedFPS.value)
+            else:
+                expectedFPS.value = 0
 
             #fps.append(expectedFPS)
             # plt.plot(frameNumber, fps)
             # plt.pause(0.05)
 
-            print "----------------------------------------------"
+            if profiling:
+                print "----------------------------------------------"
 
         except Exception as e:
             pass
@@ -1761,7 +1886,6 @@ def vpFromCam():
     outvid.release()
 
     cv2.destroyAllWindows()
-
 
 def medianFilter(vpCoord, n, vanishx, vanishy):
     i = 0
@@ -1808,9 +1932,9 @@ def varianceFilter(vpCoord, n, varx, vary):
     medVar = numpy.var(varx[0:n-1]), numpy.var(vary[0:n-1])
 
     if (medVar[0] > 1000) or (medVar[1] > 150):
-        vpValid.Value = 0
+        vpValid.value = 0
     else:
-        vpValid.Value = 1
+        vpValid.value = 1
 
     return varx, vary
 
@@ -1924,6 +2048,8 @@ if __name__ == '__main__':
     speechThread = ttsThread(1, "Speech Thread")
     speechThread.start()
     threads.append(speechThread)
+    logging.info('Speech Thread Running - %s', str(speechThread))
+    #time.sleep(1)
 
     # #logging.info("Starting speech Thread...")
     # camThread = CameraThreadClass(2, "cam Thread")
@@ -1939,20 +2065,20 @@ if __name__ == '__main__':
     trackerProcess = multiprocessing.Process(name="IMU Process",target=porterTracker, args=(exitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue,speechQueue,))
     trackerProcess.start()
     processes.append(trackerProcess)
+    logging.info('Tracker Process Running - %s', str(trackerProcess))
     speechQueue.put("Tracker Running")
+    #time.sleep(1)
+
 
     #Start Autopilot thread
     logging.info("Starting Autopilot Thread")
     autoPilotThread = autoPilotThread(2, "Auto Pilot Thread")
     autoPilotThread.start()
     threads.append(autoPilotThread)
+    logging.info('Autopilot Thread Running - %s', str(autoPilotThread))
     speechQueue.put("Autopilot Waiting")
+    #time.sleep(1)
 
-    # #Start PID thread
-    # logging.info("Starting PID Thread")
-    # PIDThread = PIDThreadClass(4, "PID Pilot Thread")
-    # PIDThread.start()
-    # threads.append(PIDThread)
 
     # try to run Debug server if the user wants it
     #dataInput = raw_input("Start Debug server... ? (y/n)")
@@ -1962,7 +2088,10 @@ if __name__ == '__main__':
             debugChannel = debugThread(3, "Debug Thread")
             debugChannel.start()
             threads.append(debugChannel)
+            logging.info('Debug Thread Running - %s', str(debugChannel))
             logging.info("Running Debug Server")
+            #time.sleep(1)
+
             # speechQueue.put("Debug Server Running")
         except Exception as e:
             logging.error("%s", str(e))
@@ -1983,6 +2112,8 @@ if __name__ == '__main__':
             serialThread = motorDataThread(4, "Motor thread")
             serialThread.start()
             threads.append(serialThread)
+            logging.info('Motor Thread Running - %s', str(serialThread))
+
         except Exception as e: #if something goes wrong... tell the user
             logging.error("Unable to establish serial comms to port /dev/ttyACM0")
             logging.error("%s", str(e))
@@ -2006,11 +2137,27 @@ if __name__ == '__main__':
             USthread = usDataThread(5, "Ultrasonic thread")
             USthread.start()
             threads.append(USthread)
+            logging.info('Ultrasonic Thread Running - %s', str(USthread))
             # speechQueue.put("Ultrasonic Sensors Connected")
         except Exception as e:
             print ('Unable to establish serial comms to US device')
             logging.error("%s", str(e))
             # USConnected = False
+
+    if Cam_Enable:
+        logging.info("Starting Cam Process")
+        cameraProcess = multiprocessing.Process(name="CAM Process", target=vpFromCam, args=())
+        cameraProcess.start()
+        processes.append(cameraProcess)
+        logging.info("Camera Process Running - %s", str(cameraProcess))
+        speechQueue.put("Camera Process Running")
+
+    #Start PID thread
+    logging.info("Starting PID Thread")
+    PIDThread = PIDThreadClass(6, "PID Pilot Thread")
+    PIDThread.start()
+    threads.append(PIDThread)
+    logging.info("PID Thread Running - %s", str(PIDThread))
 
     # speechQueue.put("Setup Complete")
 
@@ -2042,13 +2189,6 @@ if __name__ == '__main__':
             localCtrl = True
     else:
         logging.debug("Local Control mode")
-
-    if Cam_Enable:
-        logging.info("Starting Cam Process")
-        cameraProcess = multiprocessing.Process(name="CAM Process", target=vpFromCam, args=())
-        cameraProcess.start()
-        processes.append(cameraProcess)
-        speechQueue.put("Camera Process Running")
 
     # Main Control Loop
     while sysRunning: #while the main loop is not in shutdown mode...
@@ -2136,6 +2276,7 @@ if __name__ == '__main__':
                                     dataReady = False
                     elif dataInput[0] == "n" :
                         nodeQueue.put(cmdToDestination(dataInput))
+                        logging.info("Current Node list = %s", nodeQueue)
 
                         # if not autoPilot:
                         #     logging.info("Turning ON Autopilot. Send letter 'a' for emergency stop")
@@ -2204,6 +2345,9 @@ if __name__ == '__main__':
     for p in processes:
         logging.info("Closing %s process", p)
         p.join()
+
+    # print "processes = " + str(processes)
+    # print "Threads = " + str(threads)
 
     logging.info("Exiting main Thread... BYEEEE")
 

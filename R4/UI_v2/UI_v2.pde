@@ -127,7 +127,7 @@ void draw() {
         println(inBuffer);
         String[] tokens = inBuffer.split(delims);
         println(tokens.length);
-        if (tokens.length == 35){
+        if (tokens.length == 38){
           for (int i = 0; i < 6; i++) {
              distances[i] = int(Float.parseFloat(tokens[i+1]));
           }
