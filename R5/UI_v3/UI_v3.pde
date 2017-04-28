@@ -42,6 +42,7 @@ float[] lastPos = new float[2];
 
 BarChart barChart;
 
+float camFPS = 0;
 float[] speeds = new float[2];
 float[] dmdSpeeds = new float[2];
 float[] AvgSpeeds = new float[2];
@@ -49,6 +50,7 @@ float[] AvgSpeeds = new float[2];
 float [] leftSpeeds = new float[40];
 float [] rightSpeeds = new float[40];
 float [] timeSeries = new float[40];
+float [] cameraFPS = new float [40];
 
 float [] demandedSpeedL = new float[40];
 float [] demandedSpeedR = new float[40];
@@ -63,20 +65,23 @@ float porterYaw = 0;
 
 XYChart leftWheel;
 XYChart rightWheel;
+XYChart expectedFPS;
 
 float [] h_scores = new float[4];
 
 
 //should combine the following 2 functions... spaghetti code much? -_-
 
-void dataShiftBack(float left, float right){
+void dataShiftBack(float left, float right, float camFPS){
   for (int i = 0; i < leftSpeeds.length-1; i++) {
     leftSpeeds[i] = leftSpeeds[i+1];
     rightSpeeds[i] = rightSpeeds[i+1];
+    cameraFPS[i] = cameraFPS[i+1];
     timeSeries[i] = timeSeries[i+1];
   }
   leftSpeeds[leftSpeeds.length-1] = left;
   rightSpeeds[rightSpeeds.length-1] = right;
+  cameraFPS[cameraFPS.length-1] = camFPS;
   timeSeries[timeSeries.length-1] = timeSeries[timeSeries.length-2] + 1;
 }
 
@@ -108,12 +113,15 @@ void setup() {
   OrientationApplet orientationDisplay = new OrientationApplet();
   PositionApplet positionDisplay = new PositionApplet();
   HeuristicApplet heuristicDisplay = new HeuristicApplet();
+  FPSApplet fpsDisplay = new FPSApplet();
 
   PApplet.runSketch(args, US_sensors);
   PApplet.runSketch(args, speedDisplay);
   PApplet.runSketch(args, orientationDisplay);
   PApplet.runSketch(args, positionDisplay);
   PApplet.runSketch(args, heuristicDisplay);
+  PApplet.runSketch(args, fpsDisplay);
+
 }
 
 void draw() {
@@ -121,10 +129,11 @@ void draw() {
 
   try {
     while (usPort.available() > 0) {
+      //println("running");
       inBuffer = usPort.readStringUntil('\n');
       if (inBuffer != null) {
         inBuffer = inBuffer.trim();
-        println(inBuffer);
+        //println(inBuffer);
         String[] tokens = inBuffer.split(delims);
         println(tokens.length);
         if (tokens.length == 38){
@@ -140,14 +149,19 @@ void draw() {
 
           speeds[0] = Float.parseFloat(tokens[9]);
           speeds[1] = Float.parseFloat(tokens[10]);
+          camFPS = Float.parseFloat(tokens[37]);
 
-          dataShiftBack(speeds[0], speeds[1]);
+          dataShiftBack(speeds[0], speeds[1], camFPS);
           leftWheel.setData(timeSeries, leftSpeeds);
           leftWheel.setMinX(min(timeSeries));
           rightWheel.setMinX(min(timeSeries));
           leftWheel.setMaxX(max(timeSeries));
           rightWheel.setMaxX(max(timeSeries));
           rightWheel.setData(timeSeries, rightSpeeds);
+
+          expectedFPS.setMinX(min(timeSeries));
+          expectedFPS.setMaxX(max(timeSeries));
+          expectedFPS.setData(timeSeries, cameraFPS);
 
           //shiftBackDemandedSpeeds
 
@@ -170,6 +184,7 @@ void draw() {
     System.err.println("NullPointerException: " + e.getMessage());
     speeds[0] = 0;
     speeds[1] = 0;
+    camFPS = 0;
   }
 }
 
@@ -536,8 +551,8 @@ public class HeuristicApplet extends PApplet {
     strokeWeight(1);
 
     mAverage(7);
-    print(AvgHscores);
-    
+    //print(AvgHscores);
+
     rect(40, 40, (int)AvgHscores[0], 30);
     rect(40, 90, (int)AvgHscores[2], 30);
     rect(40, 140, (int)AvgHscores[3], 30);
@@ -554,5 +569,51 @@ public class HeuristicApplet extends PApplet {
     text((int)AvgHscores[3], 120, 140);
     text((int)AvgHscores[1], 120, 190);
 
+  }
+}
+
+public class FPSApplet extends PApplet {
+  int tCount = 0;
+
+  public void settings(){
+    size(280,280);
+  }
+  public void setup() {
+
+    surface.setLocation(890, 0);
+
+    expectedFPS = new XYChart(this);
+
+    expectedFPS.setData(timeSeries, cameraFPS);
+
+    // Axis formatting and labels.
+    expectedFPS.showXAxis(true);
+    expectedFPS.showYAxis(true);
+
+    expectedFPS.setMinY(-30);
+    expectedFPS.setMaxY(100);
+
+    expectedFPS.setYFormat("###");  // M
+    expectedFPS.setXFormat("0000");      // Time
+
+    // Symbol colours
+    expectedFPS.setPointColour(color(180,50,50,100));
+    expectedFPS.setPointSize(5);
+    expectedFPS.setLineWidth(1);
+
+  }
+
+  public void draw() {
+    background(255);
+    textSize(12);
+    try {
+      expectedFPS.draw(15,15,width-30,height-30);
+    } catch (NullPointerException e){
+    }
+
+    //Draw a title over the top of the chart.
+    fill(120);
+    textSize(20);
+    text("FPS", 70,30);
   }
 }

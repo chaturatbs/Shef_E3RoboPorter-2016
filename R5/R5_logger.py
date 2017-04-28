@@ -19,7 +19,7 @@ from datetime import datetime
 #define variables for speed/angle/direction
 
 #set the server address and port
-HOST = "192.168.30.94" #raw_input("Please enter the server address: ") #"192.168.137.242" #"192.168.137.154"  #input("Enter the server address to connect to (default port is 5002) - ") #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
+HOST = "192.168.29.24" #raw_input("Please enter the server address: ") #"192.168.137.242" #"192.168.137.154"  #input("Enter the server address to connect to (default port is 5002) - ") #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
 PORT = 5003
 
 #create a socket to connect to the server
@@ -43,8 +43,9 @@ try:
     viewerCon = serial.Serial('COM7', 19200)
     viewerCon.open()
     vCon = True
+    print "Vcon = True"
 except Exception as e:
-    print(str(e))
+    print("Error! = " + str(e))
 
 if logToFile:
     dt = datetime.now()
@@ -63,7 +64,7 @@ while True:
         if logToFile:
             spamwriter.writerow(data)
         viewerCon.write(data)
-        print data
+        #print data
 
     except Exception as e:
         print(str(e))

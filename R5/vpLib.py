@@ -44,7 +44,7 @@ def hough_transform(img, probabilistic, startTime, profiling, verbose):
         startTime = time.time()
 
     #Standard Hough transform
-    lines = cv2.HoughLines(edges, 1, np.pi / 180, 50)
+    lines = cv2.HoughLines(edges, 1, np.pi / 45, 50)
     hough_lines = []
 
     if profiling:

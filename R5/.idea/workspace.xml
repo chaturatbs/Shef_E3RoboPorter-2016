@@ -13,8 +13,9 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/R5$R5_UITestData.coverage" NAME="R5_UITestData Coverage Results" MODIFIED="1493289433157" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/R5$qrCode.coverage" NAME="qrCode Coverage Results" MODIFIED="1490704938505" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/R5$R5_logger.coverage" NAME="R5_logger Coverage Results" MODIFIED="1490629146371" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/R5$R5_logger.coverage" NAME="R5_logger Coverage Results" MODIFIED="1493402581849" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
@@ -25,52 +26,58 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="R5_server.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="R5_server.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/R5_server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="323">
-              <caret line="448" column="31" selection-start-line="448" selection-start-column="31" selection-end-line="448" selection-end-column="31" />
+            <state relative-caret-position="154">
+              <caret line="457" column="30" selection-start-line="457" selection-start-column="30" selection-end-line="457" selection-end-column="30" />
               <folding>
                 <element signature="e#169#182#0" expanded="true" />
-                <element signature="e#5429#6617#0" expanded="false" />
-                <element signature="e#7541#8964#0" expanded="false" />
-                <element signature="e#12161#13971#0" expanded="false" />
-                <element signature="e#16085#18710#0" expanded="false" />
-                <element signature="e#40017#48030#0" expanded="false" />
-                <element signature="e#48076#56234#0" expanded="false" />
-                <element signature="e#56321#56634#0" expanded="false" />
-                <element signature="e#56673#57011#0" expanded="false" />
-                <element signature="e#57049#57389#0" expanded="false" />
-                <element signature="e#59550#60328#0" expanded="false" />
-                <element signature="e#64191#64683#0" expanded="false" />
-                <element signature="e#64729#65214#0" expanded="false" />
-                <element signature="e#65369#70617#0" expanded="false" />
-                <element signature="e#66285#66366#0" expanded="false" />
-                <element signature="e#71164#72668#0" expanded="false" />
-                <element signature="e#72695#74525#0" expanded="false" />
-                <element signature="e#80167#81443#0" expanded="false" />
-                <element signature="e#81505#81897#0" expanded="false" />
-                <element signature="e#81939#82564#0" expanded="false" />
+                <element signature="e#637#777#0" expanded="false" />
+                <element signature="e#789#876#0" expanded="false" />
+                <element signature="e#5750#6938#0" expanded="false" />
+                <element signature="e#6967#7595#0" expanded="false" />
+                <element signature="e#7626#7712#0" expanded="false" />
+                <element signature="e#7862#9285#0" expanded="false" />
+                <element signature="e#9465#12347#0" expanded="false" />
+                <element signature="e#16487#16520#0" expanded="false" />
+                <element signature="e#19417#25698#0" expanded="false" />
+                <element signature="e#25810#34184#0" expanded="false" />
+                <element signature="e#42175#43232#0" expanded="false" />
+                <element signature="e#43314#44324#0" expanded="false" />
+                <element signature="e#44434#44653#0" expanded="false" />
+                <element signature="e#44700#45550#0" expanded="false" />
+                <element signature="e#45584#46034#0" expanded="false" />
+                <element signature="e#46094#46963#0" expanded="false" />
+                <element signature="e#47005#55018#0" expanded="false" />
+                <element signature="e#55064#63969#0" expanded="false" />
+                <element signature="e#62194#63277#0" expanded="false" />
+                <element signature="e#63319#63969#0" expanded="false" />
+                <element signature="e#64012#72714#0" expanded="false" />
+                <element signature="e#64056#64369#0" expanded="false" />
+                <element signature="e#64408#64746#0" expanded="false" />
+                <element signature="e#64784#65124#0" expanded="false" />
+                <element signature="e#66167#67100#0" expanded="false" />
+                <element signature="e#67154#67329#0" expanded="false" />
+                <element signature="e#67624#68402#0" expanded="false" />
+                <element signature="e#72777#73246#0" expanded="false" />
+                <element signature="e#73292#73777#0" expanded="false" />
+                <element signature="e#80551#80594#0" expanded="false" />
+                <element signature="e#92647#93147#0" expanded="false" />
+                <element signature="e#93197#93739#0" expanded="false" />
+                <element signature="e#93859#95135#0" expanded="false" />
+                <element signature="e#95197#95589#0" expanded="false" />
+                <element signature="e#95631#96256#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="qrCode.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/qrCode.py">
+      <file leaf-file-name="R5_UITestData.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/R5_UITestData.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="136">
-              <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="qrtools.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/qrtools/qrtools.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="129">
-              <caret line="27" column="0" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+            <state relative-caret-position="1700">
+              <caret line="103" column="22" selection-start-line="103" selection-start-column="22" selection-end-line="103" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -83,10 +90,20 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="qrCode.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/qrCode.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="102">
+              <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="builder.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="21080">
+            <state relative-caret-position="21420">
               <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
               <folding />
             </state>
@@ -96,8 +113,8 @@
       <file leaf-file-name="vpLib.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/vpLib.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="78" column="0" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
+            <state relative-caret-position="136">
+              <caret line="12" column="15" selection-start-line="12" selection-start-column="15" selection-end-line="12" selection-end-column="15" />
               <folding />
             </state>
           </provider>
@@ -106,8 +123,18 @@
       <file leaf-file-name="R5_logger.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/R5_logger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="559">
-              <caret line="66" column="0" selection-start-line="66" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
+            <state relative-caret-position="136">
+              <caret line="22" column="11" selection-start-line="22" selection-start-column="11" selection-end-line="22" selection-end-column="11" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="QR-Code-Image-Scanner-Calibrated.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/QR-Code-Image-Scanner-Calibrated.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="34">
+              <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="4" selection-end-column="21" />
               <folding />
             </state>
           </provider>
@@ -125,10 +152,11 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/R5_logger.py" />
-        <option value="$PROJECT_DIR$/vpLib.py" />
-        <option value="$PROJECT_DIR$/R5_server.py" />
         <option value="$PROJECT_DIR$/qrCode.py" />
+        <option value="$PROJECT_DIR$/vpLib.py" />
+        <option value="$PROJECT_DIR$/R5_UITestData.py" />
+        <option value="$PROJECT_DIR$/R5_logger.py" />
+        <option value="$PROJECT_DIR$/R5_server.py" />
       </list>
     </option>
   </component>
@@ -155,7 +183,7 @@
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
+    <navigator proportions="" version="1">
       <flattenPackages />
       <showMembers />
       <showModules />
@@ -168,38 +196,15 @@
       <manualOrder />
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="Scope" />
-      <pane id="Scratches" />
-      <pane id="ProjectPane">
-        <subPane>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="R5" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="R5" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="R5" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="web.server" />
+    <property name="settings.editor.selected.configurable" value="reference.settings.deploy.options" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="js-jscs-nodeInterpreter" value="C:\Program Files\nodejs\node.exe" />
   </component>
-  <component name="RunManager" selected="Python.qrCode">
+  <component name="RunManager" selected="Python.R5_logger">
     <configuration default="false" name="R5_logger" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -232,6 +237,24 @@
       <module name="R5" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/qrCode.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="R5_UITestData" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="R5" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/R5_UITestData.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -444,14 +467,16 @@
       <option name="USE_KEYWORD" value="false" />
       <method />
     </configuration>
-    <list size="2">
+    <list size="3">
       <item index="0" class="java.lang.String" itemvalue="Python.R5_logger" />
       <item index="1" class="java.lang.String" itemvalue="Python.qrCode" />
+      <item index="2" class="java.lang.String" itemvalue="Python.R5_UITestData" />
     </list>
     <recent_temporary>
-      <list size="2">
-        <item index="0" class="java.lang.String" itemvalue="Python.qrCode" />
-        <item index="1" class="java.lang.String" itemvalue="Python.R5_logger" />
+      <list size="3">
+        <item index="0" class="java.lang.String" itemvalue="Python.R5_logger" />
+        <item index="1" class="java.lang.String" itemvalue="Python.R5_UITestData" />
+        <item index="2" class="java.lang.String" itemvalue="Python.qrCode" />
       </list>
     </recent_temporary>
   </component>
@@ -472,22 +497,22 @@
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25718608" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5620094" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32850242" sideWeight="0.5060514" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.33055976" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="File Transfer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32850242" sideWeight="0.49394855" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.49394855" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3268921" sideWeight="0.66944027" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.48940998" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.48940998" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="File Transfer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.6527988" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -506,36 +531,508 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="3" />
+      <option name="time" value="11" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/R5_server.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="20468">
+          <caret line="1204" column="52" selection-start-line="1200" selection-start-column="20" selection-end-line="1204" selection-end-column="52" />
+          <folding>
+            <element signature="e#169#182#0" expanded="true" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_UITestData.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrcode.jpg">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrCode.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21420">
+          <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vpLib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="12" column="15" selection-start-line="12" selection-start-column="15" selection-end-line="12" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="867">
+          <caret line="65" column="18" selection-start-line="65" selection-start-column="18" selection-end-line="65" selection-end-column="18" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QR-Code-Image-Scanner-Calibrated.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="4" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="20468">
+          <caret line="1204" column="52" selection-start-line="1200" selection-start-column="20" selection-end-line="1204" selection-end-column="52" />
+          <folding>
+            <element signature="e#169#182#0" expanded="true" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_UITestData.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrcode.jpg">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrCode.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21505">
+          <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vpLib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="12" column="15" selection-start-line="12" selection-start-column="15" selection-end-line="12" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="867">
+          <caret line="65" column="18" selection-start-line="65" selection-start-column="18" selection-end-line="65" selection-end-column="18" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QR-Code-Image-Scanner-Calibrated.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="4" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_server.py">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#169#182#0" expanded="true" />
-            <element signature="e#5429#6617#0" expanded="false" />
-            <element signature="e#7541#8964#0" expanded="false" />
-            <element signature="e#12161#13971#0" expanded="false" />
-            <element signature="e#16085#18710#0" expanded="false" />
-            <element signature="e#40017#48030#0" expanded="false" />
-            <element signature="e#48076#56234#0" expanded="false" />
-            <element signature="e#56321#56634#0" expanded="false" />
-            <element signature="e#56673#57011#0" expanded="false" />
-            <element signature="e#57049#57389#0" expanded="false" />
-            <element signature="e#59550#60328#0" expanded="false" />
-            <element signature="e#64191#64683#0" expanded="false" />
-            <element signature="e#64729#65214#0" expanded="false" />
-            <element signature="e#65369#70617#0" expanded="false" />
-            <element signature="e#66285#66366#0" expanded="false" />
-            <element signature="e#71164#72668#0" expanded="false" />
-            <element signature="e#72695#74525#0" expanded="false" />
-            <element signature="e#80167#81443#0" expanded="false" />
-            <element signature="e#81505#81897#0" expanded="false" />
-            <element signature="e#81939#82564#0" expanded="false" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrcode.jpg">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrCode.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21420">
+          <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vpLib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="12" column="15" selection-start-line="12" selection-start-column="15" selection-end-line="12" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="867">
+          <caret line="65" column="18" selection-start-line="65" selection-start-column="18" selection-end-line="65" selection-end-column="18" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QR-Code-Image-Scanner-Calibrated.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="4" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="867">
+          <caret line="65" column="19" selection-start-line="65" selection-start-column="19" selection-end-line="65" selection-end-column="19" />
+          <folding>
+            <element signature="e#169#182#0" expanded="true" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/qrtools/qrtools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="27" column="0" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrcode.jpg">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21505">
+          <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vpLib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="12" column="15" selection-start-line="12" selection-start-column="15" selection-end-line="12" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7616">
+          <caret line="448" column="31" selection-start-line="448" selection-start-column="31" selection-end-line="448" selection-end-column="31" />
+          <folding>
+            <element signature="e#169#182#0" expanded="true" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrCode.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/qrtools/qrtools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="27" column="0" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qrcode.jpg">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21505">
+          <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vpLib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1258">
+          <caret line="78" column="0" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="884">
+          <caret line="66" column="0" selection-start-line="66" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#169#182#0" expanded="true" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -554,25 +1051,41 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#169#182#0" expanded="true" />
-            <element signature="e#5429#6617#0" expanded="false" />
-            <element signature="e#7541#8964#0" expanded="false" />
-            <element signature="e#12161#13971#0" expanded="false" />
-            <element signature="e#16085#18710#0" expanded="false" />
-            <element signature="e#40017#48030#0" expanded="false" />
-            <element signature="e#48076#56234#0" expanded="false" />
-            <element signature="e#56321#56634#0" expanded="false" />
-            <element signature="e#56673#57011#0" expanded="false" />
-            <element signature="e#57049#57389#0" expanded="false" />
-            <element signature="e#59550#60328#0" expanded="false" />
-            <element signature="e#64191#64683#0" expanded="false" />
-            <element signature="e#64729#65214#0" expanded="false" />
-            <element signature="e#65369#70617#0" expanded="false" />
-            <element signature="e#66285#66366#0" expanded="false" />
-            <element signature="e#71164#72668#0" expanded="false" />
-            <element signature="e#72695#74525#0" expanded="false" />
-            <element signature="e#80167#81443#0" expanded="false" />
-            <element signature="e#81505#81897#0" expanded="false" />
-            <element signature="e#81939#82564#0" expanded="false" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -581,30 +1094,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="884">
           <caret line="66" column="0" selection-start-line="66" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/R5_logger.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="559">
-          <caret line="66" column="0" selection-start-line="66" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/vpLib.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="78" column="0" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="21080">
-          <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -614,58 +1103,113 @@
         <state />
       </provider>
     </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/qrtools/qrtools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="355">
+          <caret line="27" column="0" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_UITestData.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1700">
+          <caret line="103" column="22" selection-start-line="103" selection-start-column="22" selection-end-line="103" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/qrcode.jpg">
       <provider selected="true" editor-type-id="images">
         <state />
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/qrtools/qrtools.py">
+    <entry file="file://$PROJECT_DIR$/qrCode.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="129">
-          <caret line="27" column="0" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+        <state relative-caret-position="102">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda2/Lib/site-packages/pyqrcode/builder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21420">
+          <caret line="1265" column="0" selection-start-line="1265" selection-start-column="0" selection-end-line="1265" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vpLib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="12" column="15" selection-start-line="12" selection-start-column="15" selection-end-line="12" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QR-Code-Image-Scanner-Calibrated.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="4" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/R5_logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="22" column="11" selection-start-line="22" selection-start-column="11" selection-end-line="22" selection-end-column="11" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/R5_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
-          <caret line="448" column="31" selection-start-line="448" selection-start-column="31" selection-end-line="448" selection-end-column="31" />
+        <state relative-caret-position="154">
+          <caret line="457" column="30" selection-start-line="457" selection-start-column="30" selection-end-line="457" selection-end-column="30" />
           <folding>
             <element signature="e#169#182#0" expanded="true" />
-            <element signature="e#5429#6617#0" expanded="false" />
-            <element signature="e#7541#8964#0" expanded="false" />
-            <element signature="e#12161#13971#0" expanded="false" />
-            <element signature="e#16085#18710#0" expanded="false" />
-            <element signature="e#40017#48030#0" expanded="false" />
-            <element signature="e#48076#56234#0" expanded="false" />
-            <element signature="e#56321#56634#0" expanded="false" />
-            <element signature="e#56673#57011#0" expanded="false" />
-            <element signature="e#57049#57389#0" expanded="false" />
-            <element signature="e#59550#60328#0" expanded="false" />
-            <element signature="e#64191#64683#0" expanded="false" />
-            <element signature="e#64729#65214#0" expanded="false" />
-            <element signature="e#65369#70617#0" expanded="false" />
-            <element signature="e#66285#66366#0" expanded="false" />
-            <element signature="e#71164#72668#0" expanded="false" />
-            <element signature="e#72695#74525#0" expanded="false" />
-            <element signature="e#80167#81443#0" expanded="false" />
-            <element signature="e#81505#81897#0" expanded="false" />
-            <element signature="e#81939#82564#0" expanded="false" />
+            <element signature="e#637#777#0" expanded="false" />
+            <element signature="e#789#876#0" expanded="false" />
+            <element signature="e#5750#6938#0" expanded="false" />
+            <element signature="e#6967#7595#0" expanded="false" />
+            <element signature="e#7626#7712#0" expanded="false" />
+            <element signature="e#7862#9285#0" expanded="false" />
+            <element signature="e#9465#12347#0" expanded="false" />
+            <element signature="e#16487#16520#0" expanded="false" />
+            <element signature="e#19417#25698#0" expanded="false" />
+            <element signature="e#25810#34184#0" expanded="false" />
+            <element signature="e#42175#43232#0" expanded="false" />
+            <element signature="e#43314#44324#0" expanded="false" />
+            <element signature="e#44434#44653#0" expanded="false" />
+            <element signature="e#44700#45550#0" expanded="false" />
+            <element signature="e#45584#46034#0" expanded="false" />
+            <element signature="e#46094#46963#0" expanded="false" />
+            <element signature="e#47005#55018#0" expanded="false" />
+            <element signature="e#55064#63969#0" expanded="false" />
+            <element signature="e#62194#63277#0" expanded="false" />
+            <element signature="e#63319#63969#0" expanded="false" />
+            <element signature="e#64012#72714#0" expanded="false" />
+            <element signature="e#64056#64369#0" expanded="false" />
+            <element signature="e#64408#64746#0" expanded="false" />
+            <element signature="e#64784#65124#0" expanded="false" />
+            <element signature="e#66167#67100#0" expanded="false" />
+            <element signature="e#67154#67329#0" expanded="false" />
+            <element signature="e#67624#68402#0" expanded="false" />
+            <element signature="e#72777#73246#0" expanded="false" />
+            <element signature="e#73292#73777#0" expanded="false" />
+            <element signature="e#80551#80594#0" expanded="false" />
+            <element signature="e#92647#93147#0" expanded="false" />
+            <element signature="e#93197#93739#0" expanded="false" />
+            <element signature="e#93859#95135#0" expanded="false" />
+            <element signature="e#95197#95589#0" expanded="false" />
+            <element signature="e#95631#96256#0" expanded="false" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/qrCode.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
   </component>
   <component name="webServersAuthStorage">
-    <data>AAAAsHjoWkm72QpURmxcYM+aAb4KrQ9GCQFeBwQVzuZCsMKeTl/pyfyFseyJrGN8YWTX9rq9LD0yD8FU7ahQ9fg9jTFhkQ7v7avGLNupmTF6Y/bYFdFn/36S8gXtvFVncemKSIMC9gIyEZXmQFFgxXZVILE21SUnRSvKCybotYKmGoRZpHotLMnIlfMXTjR9wnpTqq5y4YVX2I5Ywg2iOrj+556+vvFnYrrwcTzsr5ttiDDeC19+hqvlijuB9pydh6/ZDA==</data>
+    <data>AAABEE6H+yJv3bXpiqPkChgG3XvkJCvCg7TDsbge5W6qyJGvjEO8ySQae5xx/tudvrIvDDlk/lWum2KP51KIdnPDhK4Da8sCSiRW2wdA+OFuX3C6QfE0SZrSJaXISnPyrgCkXy918loMFrwTE0RnGp3vj6UlNoPqR66+MODPRoP2n1W2ugZ+GK4r90D2Rq8dK+jq0xqtMWxp6DafzEe4QV7C0k2zpa+cc7mkAsfuRkSkElgxOL6XumbnwvqhTbrb5txe/7opEONVgDEpXAa/gdtNzRPFSWcu8P88DCZnIgoY7AHEgYm45WpYGb3nYqKk+MrXQGj8br+Z+sPQbJs95MXK3JJaOR81HpktSJJpKYsbKOvFkuE1pa/jw7zk6iIk8nS4Zg==</data>
   </component>
 </project>

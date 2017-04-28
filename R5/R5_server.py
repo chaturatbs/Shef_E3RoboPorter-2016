@@ -4,7 +4,7 @@
 
 # Author     - C. Samarakoon
 # Created    - 21/03/2017
-# Modified   - 21/03/2017
+# Modified   - 01/04/2017
 #
 ###---Imports-------------------
 
@@ -23,6 +23,10 @@ import glob
 import datetime
 import copy
 import cv2
+
+#import zbar
+#import time
+from PIL import Image
 
 try:
     import zbar
@@ -66,8 +70,7 @@ US_Enable = True
 Motor_Enable = True
 Cam_Enable = True
 Speech_Enable = True
-Debug_Enable = False
-
+Debug_Enable = True
 
 ##--Motor Commands
 global lastCommand #holds the last command that was sent to the motor controllers
@@ -98,7 +101,9 @@ safetyOn = True
 global USAvgDistances #vector holding the average US distances
 global obstruction #Boolean for comminicating whether there is an obstruction in the direction of travel
 global UShosts
-
+global stoppingDistance
+global maxSpeeds
+global usCaution
     #OLD
     #F_bot, F_left, F_right, L_mid, R_mid, B_mid - F_top, L_front, R_front, L_back, R_back, B_left, B_right
 
@@ -108,8 +113,12 @@ global UShosts
 
 USAvgDistances = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 obstruction = False
+usCaution = False
 USThresholds = [30, 20, 40] #threasholds for treating objects as obstacles [front,side,back]
+#make sure stopping distance is > usThresholds
+stoppingDistance = 30
 UShosts = 2
+maxSpeeds = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 ##--Multi-Threading/Muti-processing
 global threadLock #lock to be used when changing global variables
@@ -135,6 +144,9 @@ global QRLocation
 QRdetected = multiprocessing.Value('b', False)
 QRdata = ""
 
+global qrDict
+global vpDict
+global lastQR
 # -Camera Functions
 
 grid_size = [0,0]
@@ -175,9 +187,10 @@ global porterLocation_IMU
 global roaming
 global localised
 
-localised = multiprocessing.Value("b", False)
+localised = multiprocessing.Value("b", True)
 roaming = multiprocessing.Value("b", False)
 targetDestination = [0,0]
+#porterLocation_Global = [3250,3500]
 
 porterOrientation = multiprocessing.Value('d',0.0)  # from north heading (in degrees?)
 distanceToGoal = 0
@@ -313,6 +326,7 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
 ##---------Mapping process
 
 
+
 ##----------IMU process
 
 def porterTracker(exitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue, speechQueue):
@@ -324,7 +338,7 @@ def porterTracker(exitFlag,imuEnable, porterLocation_Global, porterOrientation, 
     # if AHRSmode is not "imu" or "wheel":
     #     AHRSmode = "wheel"
 
-    if platform == "linux" or platform == "linux2":  # if running on linux
+    if platform == "linux" or platform == "linux2" and AHRSmode is "wheel":  # if running on linux
         IMUSettingsFile = RTIMU.Settings("mainIMUcal")  # load IMU caliberation file
         imu = RTIMU.RTIMU(IMUSettingsFile)  # initialise the IMU handle
         imuEnable.value = True  # IMU is initialised
@@ -375,7 +389,6 @@ def porterTracker(exitFlag,imuEnable, porterLocation_Global, porterOrientation, 
             except Exception as e:
                 logging.error("%s", str(e))
 
-
 def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelSpeeds,orientationWheels):  # function for calculating the distance moved
     # Assume that it doesnt "move" when rotating
     # Need to check if this function is mathematically sound for all r, theta.
@@ -405,9 +418,9 @@ def movePorter(lPulses, rPulses, porterLocation_Global, porterOrientation,wheelS
 
         # # r is the staight line distance traveled... so find x,y components
     #if lastCommand == "f":
-
-    porterLocation_Global[0] += r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
-    porterLocation_Global[1] += r * numpy.sin(numpy.pi/2 - porterOrientation.value)  # y component
+    if not qrDict['visible'] :
+        porterLocation_Global[0] += r * numpy.cos(numpy.pi/2 - porterOrientation.value)  # x component
+        porterLocation_Global[1] += r * numpy.sin(numpy.pi/2 - porterOrientation.value)  # y component
 
     #print "Location is " + str(porterLocation_Global)
     # elif lastCommand == "b":
@@ -441,15 +454,18 @@ class autoPilotThread(MultiThreadBase):
         self.looping = True #DO NOT CHANGE THIS
         self.obs = False
         self.distQuantise = 30  # path re-calculation distance
-        self.autoSpeed = 20  # autopilot movement speed
+        self.autoSpeed = 50  # autopilot movement speed
         self.turningSpeed = 10
         self.alignmentThreshold = 10  # alignment error in degrees
         self.hScores = []
         self.bestScoreIndex = 0
-        self.distThreshold = 40
+        self.distThreshold = 60
+
+        self.vanishAngles = []
 
         self.PID_Tuning = (0.01, 0.01, 0)
         self.vanishsum = 0
+
 
     def run(self):
         global threadLock
@@ -466,6 +482,7 @@ class autoPilotThread(MultiThreadBase):
         global pidEnable
         global nodeQueue
         global avoidingObstacle
+        #global porterOrientation
 
         while not exitFlag.value: #while the system isn't in shutdown mode
             if not autoPilot: #if autopilot is disabled...
@@ -479,57 +496,185 @@ class autoPilotThread(MultiThreadBase):
                 logging.warning("IMU not available. Can't turn on Autopilot... Soz...")
                 speechQueue.put("IMU not available. Can't turn on Autopilot...")
                 autoPilot = False
-            elif self.looping and self.obs:
-                #porterLocation_Global = [0,0]  # for now assume local position is the same as global
-                # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
-                logging.info("Iteratve Autopilot mode with Obstacle Avoidance")
-                speechQueue.put("Iteratve Autopilot mode with Obstacle Avoidance")  # vocalise
+            # elif self.looping and self.obs:
+            #     #porterLocation_Global = [0,0]  # for now assume local position is the same as global
+            #     # otherwise put robot into exploration more till it finds a QR code, then position. FOR LATER
+            #     logging.info("Iteratve Autopilot mode with Obstacle Avoidance")
+            #     speechQueue.put("Iteratve Autopilot mode with Obstacle Avoidance")  # vocalise
+            #
+            #     self.dX = targetDestination[0] - porterLocation_Global[0]
+            #     self.dY = targetDestination[1] - porterLocation_Global[1]
+            #
+            #     while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > self.distThreshold and autoPilot and not exitFlag.value:
+            #     # find the angle of the goal from north
+            #
+            #         speechQueue.put("Quantising the environment")
+            #         logging.info("Quantising The environment")
+            #         time.sleep(1)
+            #
+            #         self.hScores = self.checkquad()
+            #         h_scores = self.hScores
+            #
+            #         if self.bestScoreIndex == 0:
+            #             speechQueue.put("Best way to go is forward")
+            #             logging.info("Best way to go is forward")
+            #             self.moveStraight(dist=30,direction="f")
+            #         elif self.bestScoreIndex == 1:
+            #             speechQueue.put("Best way to go is backwards")
+            #             logging.info("Best way to go is backwards")
+            #             self.moveStraight(dist=30, direction="b")
+            #         elif self.bestScoreIndex == 2:
+            #             speechQueue.put("Best way to go is left")
+            #             logging.info("Best way to go is left")
+            #             self.turn(angleChange= -90)
+            #         elif self.bestScoreIndex == 3:
+            #             speechQueue.put("Best way to go is right")
+            #             logging.info("Best way to go is right")
+            #             self.turn(angleChange= 90)
+            #
+            #         self.dX = targetDestination[0] - porterLocation_Global[0]
+            #         self.dY = targetDestination[1] - porterLocation_Global[1]
+            #
+            #         if obstruction:
+            #             time.sleep(5)
+            #             speechQueue.put("Obstruction, sleeping for a bit")
+            #
+            #     with threadLock:
+            #         lastCommand = "x"
+            #         speedVector = [0, 0]
+            #         dataReady = True
+            #
+            #     speechQueue.put("Successfully arrived at the target")
+            #     logging.info("Successfully arrived at the target")
+            #     autoPilot = False  # turn off autopilot at the end of the maneuver
+            elif not localised.value:
 
-                self.dX = targetDestination[0] - porterLocation_Global[0]
-                self.dY = targetDestination[1] - porterLocation_Global[1]
+                pidEnable = False
+                self.vanishAngles = []
 
-                while numpy.sqrt(numpy.square(self.dX) + numpy.square(self.dY)) > self.distThreshold and autoPilot and not exitFlag.value:
-                # find the angle of the goal from north
+                turnAngle = numpy.rad2deg(porterOrientation.value)
+                print ("Current Location = ", porterLocation_Global)
+                logging.warning("Not Localised. Motion path unreliable. Trying to find a QR code")
+                speechQueue.put("I dont know where I am. I might run into some trouble.")
 
-                    speechQueue.put("Quantising the environment")
-                    logging.info("Quantising The environment")
-                    time.sleep(1)
+                #rotate until qrFound
+                if not qrDict['visible'] and autoPilot and not exitFlag.value :
+                    if USAvgDistances[7] > USAvgDistances[10]:  # more space on the left
+                        with threadLock:
+                            lastCommand = "l"
+                            setSpeedVector = [-self.turningSpeed, self.turningSpeed]
+                            speedVector = [-self.turningSpeed, self.turningSpeed]
+                            dataReady = True
+                    else:
+                        with threadLock:
+                            lastCommand = "r"
+                            setSpeedVector = [self.turningSpeed, -self.turningSpeed]
+                            speedVector = [self.turningSpeed, -self.turningSpeed]
+                            dataReady = True
 
-                    self.hScores = self.checkquad()
-                    h_scores = self.hScores
+                self.angleToGoal = 360
+                #turn for 360'
+                while not qrDict['visible'] and autoPilot and not exitFlag.value and (abs(self.angleChange) > 1): #and <360'
 
-                    if self.bestScoreIndex == 0:
-                        speechQueue.put("Best way to go is forward")
-                        logging.info("Best way to go is forward")
-                        self.moveStraight(dist=30,direction="f")
-                    elif self.bestScoreIndex == 1:
-                        speechQueue.put("Best way to go is backwards")
-                        logging.info("Best way to go is backwards")
-                        self.moveStraight(dist=30, direction="b")
-                    elif self.bestScoreIndex == 2:
-                        speechQueue.put("Best way to go is left")
-                        logging.info("Best way to go is left")
-                        self.turn(angleChange= -90)
-                    elif self.bestScoreIndex == 3:
-                        speechQueue.put("Best way to go is right")
-                        logging.info("Best way to go is right")
-                        self.turn(angleChange= 90)
+                    self.angleChange = self.angleToGoal - numpy.rad2deg(porterOrientation.value)
+                    print "angle change = " + str(self.angleChange)
+                    print "Orientation = " + str(numpy.rad2deg(porterOrientation.value))
 
-                    self.dX = targetDestination[0] - porterLocation_Global[0]
-                    self.dY = targetDestination[1] - porterLocation_Global[1]
-
-                    if obstruction:
-                        time.sleep(5)
-                        speechQueue.put("Obstruction, sleeping for a bit")
+                    if vpValid.value:
+                        if len(self.vanishAngles)>0 and \
+                                abs(self.vanishAngles[len(self.vanishAngles)-1] - porterOrientation.value)>5:
+                            print "vp found"
+                            self.vanishAngles.append(porterOrientation.value)
+                            print (self.vanishAngles)
+                    time.sleep(0.1)
 
                 with threadLock:
                     lastCommand = "x"
+                    setSpeedVector = [0, 0]
                     speedVector = [0, 0]
                     dataReady = True
 
-                speechQueue.put("Successfully arrived at the target")
-                logging.info("Successfully arrived at the target")
-                autoPilot = False  # turn off autopilot at the end of the maneuver
+                if not qrDict['visible'] :
+
+                    while not qrDict['visible'] and autoPilot and not exitFlag.value:
+                        # align to vp
+
+                        if not qrDict['visible'] and not vpValid.value and autoPilot and not exitFlag.value:
+                            if USAvgDistances[7] > USAvgDistances[10]:  # more space on the left
+                                with threadLock:
+                                    lastCommand = "l"
+                                    setSpeedVector = [-self.turningSpeed, self.turningSpeed]
+                                    speedVector = [-self.turningSpeed, self.turningSpeed]
+                                    dataReady = True
+                            else:
+                                with threadLock:
+                                    lastCommand = "r"
+                                    setSpeedVector = [self.turningSpeed, -self.turningSpeed]
+                                    speedVector = [self.turningSpeed, -self.turningSpeed]
+                                    dataReady = True
+
+                        self.vanishAngles = []
+                        while not qrDict['visible'] and not vpValid.value and autoPilot and not exitFlag.value:  # and <360'
+                            time.sleep(0.1)
+                            if vpValid.value:
+                                self.vanishAngles.append(porterOrientation.value)
+
+                        with threadLock:
+                            lastCommand = "x"
+                            setSpeedVector = [0, 0]
+                            speedVector = [0, 0]
+                            dataReady = True
+
+                        # move to the end of the corridor (until obstruction)
+                        if lastCommand != "f":
+                            with threadLock:
+                                pidEnable = True
+                                lastCommand = "f"
+                                setSpeedVector = [self.autoSpeed, self.autoSpeed]
+                                speedVector = [self.autoSpeed, self.autoSpeed]
+                                dataReady = True
+
+                        while not obstruction and not qrDict['visible'] and autoPilot and not exitFlag.value:
+                            time.sleep(0.1)
+
+                        with threadLock:
+                            lastCommand = "x"
+                            setSpeedVector = [0, 0]
+                            speedVector = [0, 0]
+                            dataReady = True
+
+                        #autoPilot = False
+                        time.sleep(2)
+
+                    with threadLock:
+                        lastCommand = "x"
+                        setSpeedVector = [0, 0]
+                        speedVector = [0, 0]
+                        dataReady = True
+
+                if qrDict['visible']:
+                    #qrDict['location']
+                    #qrDict['orientation']
+                    # UPDATE LOCATION WHEN SEEN.
+                    if (0 <= qrDict['orientation'] < 90):
+                        porterLocation_Global = qrDict['location']
+                    elif (90 <= qrDict['orientation'] < 180):
+                        porterLocation_Global = qrDict['location']
+                    elif (180 <= qrDict['orientation'] < 270):
+                        porterLocation_Global = qrDict['location']
+                    elif (270<= qrDict['orientation'] < 360):
+                        porterLocation_Global = qrDict['location']
+                    else:
+                        logging.error("Something is wrong with the QR code I found. It makes no sense")
+                    localised.value = True
+                    print "Found a QR code! I am LOCALISED!"
+                    print qrDict
+                    print ("Current Location = ", porterLocation_Global)
+                else :
+                    print "I cant find a QR code :( "
+
+                autoPilot = False
+                pidEnable = False
 
             elif self.looping: #iterative mode
 
@@ -1153,6 +1298,8 @@ class motorDataThread(MultiThreadBase):
         self.inputBuf = ""
         self.pulses = ["",""]
         self.obs = False
+        self.smoothBrake = False
+
 
     def run(self):
         global speedVector
@@ -1200,8 +1347,23 @@ class motorDataThread(MultiThreadBase):
                             speedVector = [0, 0]
                             dataReady = False
                         self.send_serial_data(speedVector)
+
                 elif lastSent != speedVector: #otherwise...
                     logging.warning("Obstacle Detected But Safety OFF...") #give a warning, but dont do anything to stop
+                    self.send_serial_data(speedVector)
+            elif self.smoothBrake and usCaution:
+
+                if lastSent != [0, 0]:
+                    logging.info("Setting smooth speed")
+                    with threadLock:
+                        if lastCommand == "f":
+                            speedVector = [min(maxSpeeds[0:3]),min(maxSpeeds[0:3])]
+                            dataReady = False
+                        elif lastCommand == "b":
+                            speedVector = [min(maxSpeeds[4:6]),min(maxSpeeds[4:6])]
+                            dataReady = False
+                        else:
+                            logging.warning("Smooth Braking is not valid for rotation")
                     self.send_serial_data(speedVector)
 
             elif dataReady and (lastSent != speedVector): #no obstruction and the new command is different to the last command
@@ -1363,6 +1525,12 @@ class usDataThread(MultiThreadBase):
             except Exception as e:
                 logging.error("%s", e)
 
+    def getMaxSpeeds(self,usData):
+        aMax = 2*numpy.pi/6
+        radToRPM = 60/(2*numpy.pi)
+        for i in range(len(usData)):
+            maxSpeeds[i] = int((numpy.sqrt(aMax*((usData[i]-stoppingDistance)/100)))*radToRPM)
+
 
     def run(self):
         global speedVector
@@ -1388,7 +1556,9 @@ class usDataThread(MultiThreadBase):
             try:
                 #self.getUSvector()
                 self.mAverage(7)
+                #self.getMaxSpeeds(USAvgDistances)
                 self.errorCount = 0
+                #print "avg US = " + str(USAvgDistances)
 
             except Exception as e:
                 self.errorCount += 1
@@ -1488,6 +1658,11 @@ class usDataThread(MultiThreadBase):
                     with threadLock:
                         obstruction = False
 
+                if (maxSpeeds[1] > abs(speedVector[0])) or (maxSpeeds[0] > abs(speedVector[0])) or (maxSpeeds[2] > abs(speedVector[0])) or (maxSpeeds[3] > abs(speedVector[0])):
+                    usCaution = True
+                else:
+                    usCaution = False
+
             elif lastCommand == "b":
                 if (int(USAvgDistances[4]) < USThresholds[2]) or (int(USAvgDistances[5]) < USThresholds[2]) or (int(USAvgDistances[6]) < USThresholds[2]):
                     logging.warning("BACK TOO CLOSE. STOPPPPP!!!")
@@ -1498,6 +1673,11 @@ class usDataThread(MultiThreadBase):
                 elif obstruction != False:
                     with threadLock:
                         obstruction = False
+
+                if (maxSpeeds[6] > abs(speedVector[0])) or (maxSpeeds[5] > abs(speedVector[0])) or (maxSpeeds[6] > abs(speedVector[0])):
+                    usCaution = True
+                else:
+                    usCaution = False
 
             elif lastCommand == "l":
                 if (int(USAvgDistances[7]) < USThresholds[1]) or (int(USAvgDistances[8]) < USThresholds[1]) or (int(USAvgDistances[12]) < USThresholds[1]/2):
@@ -1523,6 +1703,8 @@ class usDataThread(MultiThreadBase):
             elif lastCommand == "x":
                 with threadLock:
                     obstruction = False
+
+
         except Exception as e:
             self.errorCount += 1
             logging.error("%s", str(e))
@@ -1540,8 +1722,8 @@ class ttsThread(MultiThreadBase): #text to speech thread
             if not speechQueue.empty():
                 engine.say(speechQueue.get())
                 engine.runAndWait()
-            else:
-                time.sleep(0.5)
+
+            time.sleep(1)
 
         engine.say("Shutting down")
         engine.runAndWait()
@@ -1575,9 +1757,12 @@ class PIDThreadClass(MultiThreadBase):
         self.threadID = threadID
         self.name = name
         self.vp_PID_Tuning = (0.04, 0.0, 0)
+        self.qr_PID_Tuning = (0.04, 0.0, 0)
         self.obs_PID_Tuning = (0.01, 0.01, 0)
         self.side_PID_Tuning = (0.02, 0.0, 0)
         self.vanishSum = 0
+        self.qrSum = 0
+
         self.usError_front_Sum = 0
         self.usError_front= 0
         self.usError_front_last= 0
@@ -1594,6 +1779,7 @@ class PIDThreadClass(MultiThreadBase):
         global pidEnable
         global vpValid
         global vanish
+        global qrDict
 
         if not exitFlag.value:
             threading.Timer(0.2, self.run).start()
@@ -1652,8 +1838,36 @@ class PIDThreadClass(MultiThreadBase):
                 #         lastCommand = "l"
                 #         speedVector = [int(setSpeedVector[0] + offset), int(setSpeedVector[1])]
 
-                if vpValid.value or QRdetected.value:
 
+                # qrDict['visible'] = False
+                # qrDict['string'] = data[0]
+                # qrDict['location'] = [0, 0]
+                # qrDict['distance'] = D
+                # qrDict['centre'] = [x_centre, y_centre]
+                #
+                #
+                # if qrDict['visible']:
+                #     #print qrDict
+                #     print ("qr Code dictionary = ", qrDict)
+                #     self.vanishSum = 0
+                #     logging.info("QR Code adjustment")
+                #     avoidingObstacle = False
+                #     self.qrSum += qrDict['centre'][0]
+                #     offset = (self.qr_PID_Tuning[0] * qrDict['centre'][0]) + (self.qr_PID_Tuning[1] * self.qrSum)
+                #
+                #     offset = (offset * ((setSpeedVector[0] + setSpeedVector[1]) / 2)) / 10
+                #
+                #     if offset >= 0:
+                #         lastCommand = "r"
+                #         speedVector = [int(setSpeedVector[0]), int(setSpeedVector[1] - offset)]
+                #     else:
+                #         lastCommand = "l"
+                #         speedVector = [int(setSpeedVector[0] + offset), int(setSpeedVector[1])]
+
+                if vpValid.value:
+
+                    print ("vp Code dictionary = ", vpDict)
+                    self.qrSum = 0
                     # if QRdetected.value:
                     #     vanish.value = qrDict['xLoc']
 
@@ -1756,36 +1970,43 @@ def qrCalibrate(qrProcessor):
 
     return F
 
-def qrCodeScanner():
-    # create a Processor
-    qrProcessor = zbar.Processor()
+def scanQRCode(inputImage, qrDict, lastQR):
 
-    # configure the Processor
-    qrProcessor.parse_config('enable')
+    updateEnabled = True
+    # create a Scanner
+    scanner = zbar.ImageScanner()
 
-    # initialize the Processor
-    device = '/dev/video0'
+    # configure the Scanner
+    scanner.parse_config('enable')
 
-    # if len(argv) > 1:
-    #     device = argv[1]
+    cv2_image = cv2.cvtColor(inputImage, cv2.COLOR_BGR2GRAY)
+    pil = Image.fromarray(cv2_image)
 
-    qrProcessor.init(device)
+    #pil = inputImage #.open('cam.jpg').convert('L')
+    width, height = pil.size
+    raw = pil.tobytes()
 
-    # enable the preview window
-    qrProcessor.visible = True
+    # wrap image data
+    image = zbar.Image(width, height, 'Y800', raw)
+    #print "Ready..."
 
-    F = qrCalibrate(qrProcessor)
+    # scan the image for QR Codes
+    try: #try to scan the image
+        scanner.scan(image)
+    except Exception as e:
+        logging.error("%s", e)
 
-    while (True):
-        print "Ready..."
+    # When symbol detected
+    i = 0
+    for symbol in image:
+        i+=1
+        #print "symbol obtained"
 
-        # read at least one barcode (or until window closed)
-        qrProcessor.process_one()
+        # Seperate code into useful data
+        data = symbol.data.split(',')
+        #print ("data = ", data)
 
-        # When symbol detected
-        for symbol in qrProcessor.results:
-            # Seperate code into useful data
-            data = symbol.data.split(',')
+        if len(data) == 5:
             location = data[0]
             size = float(data[1])
             # Save code corners
@@ -1808,19 +2029,66 @@ def qrCodeScanner():
             P = (P_x + P_y) / 2
 
             # Set Code actual size in mm
+            F = 618
             W = size
-            D = ((F * W) / P) / 1000
-            print 'F = ', F, 'W = ', W, 'P = ', P, 'D = ', ((F * W) / P)
-            print 'QR Code scanned:', symbol.data
-            print 'RoboPorter is', "%.2fm" % D, 'away from ' '%s' % data[0]
-            time.sleep(1)
+            D = ((F * W) / P) / 10
+            # print 'F = ', F,'W = ', W, 'P = ', P, 'D = ', ((F * W) / P)
+            #print 'QR Code scanned:', symbol.data
+            #print 'RoboPorter is', "%.2fcm" % D, 'away from ' '%s' % data[0]
 
-def vpFromCam():
+            qrDict['visible'] = True
+            qrDict['string'] = data[0]
+            qrDict['locX'] = int(data[2]) * 50
+            qrDict['locY'] = int(data[3]) * 50
+            qrDict['distance'] = int(D)
+            qrDict['orientation'] = int(data[4])
+            qrDict['centre'] = [float(x_centre),float(y_centre)]
+
+            print ("QR Code data = " + str (qrDict))
+            if updateEnabled and lastCommand != "r" and lastCommand != "l":
+                print ("updating location")
+                if qrDict['orientation'] >=0 and qrDict['orientation'] < 90:
+                    porterLocation_Global[0] = qrDict['locX'] + qrDict['distance']*numpy.cos(numpy.deg2rad(90 - qrDict['orientation']))
+                    porterLocation_Global[1] = qrDict['locY'] + qrDict['distance']*numpy.sin(numpy.deg2rad(90 - qrDict['orientation']))
+                    if qrDict['last']  != qrDict['string']:
+                        porterOrientation.value = numpy.deg2rad((180+qrDict['orientation'])-360)
+                        orientationWheels.value = porterOrientation.value
+                elif qrDict['orientation'] >= 90 and qrDict['orientation'] < 180:
+                    porterLocation_Global[0] = qrDict['locX'] + qrDict['distance'] * numpy.cos(numpy.deg2rad(qrDict['orientation'] - 90))
+                    porterLocation_Global[1] = qrDict['locY'] - qrDict['distance'] * numpy.sin(numpy.deg2rad(qrDict['orientation'] - 90))
+                    if qrDict['last']  != qrDict['string']:
+                        porterOrientation.value = numpy.deg2rad((180+qrDict['orientation'])-360)
+                        orientationWheels.value = porterOrientation.value
+                elif qrDict['orientation'] >= 180 and qrDict['orientation'] < 270:
+                    porterLocation_Global[0] = qrDict['locX'] - qrDict['distance'] * numpy.cos(numpy.deg2rad(270 - qrDict['orientation']))
+                    porterLocation_Global[1] = qrDict['locY'] - qrDict['distance'] * numpy.sin(numpy.deg2rad(270 - qrDict['orientation']))
+                    if qrDict['last']  != qrDict['string']:
+                        porterOrientation.value = numpy.deg2rad(qrDict['orientation']-180)
+                        orientationWheels.value = porterOrientation.value
+                elif qrDict['orientation'] >= 270 and qrDict['orientation'] < 360:
+                    porterLocation_Global[0] = qrDict['locX'] - qrDict['distance'] * numpy.cos(numpy.deg2rad(qrDict['orientation'] - 270))
+                    porterLocation_Global[1] = qrDict['locY'] + qrDict['distance'] * numpy.sin(numpy.deg2rad(qrDict['orientation'] - 270))
+                    if qrDict['last']  != qrDict['string']:
+                        porterOrientation.value = numpy.deg2rad(qrDict['orientation'] - 180)
+                        orientationWheels.value = porterOrientation.value
+                else:
+                    print ("ERROR in QR code orientation")
+
+            if qrDict['last'] != qrDict['string']:
+                qrDict['last'] = qrDict['string']
+
+    if i==0:
+        qrDict['visible'] = False
+
+def CameraFunction(vpDict, qrDict,lastQR):
     global vanish
     global vpValid
     global expectedFPS
 
-    profiling = False
+    frameCount = 0
+
+
+    profiling = True
     verbose = False
     vanishx = [0,0,0]
     vanishy = [0,0,0]
@@ -1831,7 +2099,7 @@ def vpFromCam():
     #capVid = cv2.VideoCapture('testOutsideLab.avi')  # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    outvid = cv2.VideoWriter('output.avi', fourcc, 5.0, (640,480))
+    outvid = cv2.VideoWriter('output.avi', fourcc, 5.0, (640/2,480/2))
 
     # while not capVid.isOpened():
     #     print ("Error Opening Camera")
@@ -1845,6 +2113,13 @@ def vpFromCam():
 
     while capVid.isOpened() and not exitFlag.value :
         blnFrameReadSuccessfully, img = capVid.read()
+        #frameCount += 1
+
+        if True :#frameCount > 8:
+            #print "trying to get QR"
+            scanQRCode(img,qrDict,lastQR)
+            #frameCount = 0
+
 
         img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
         #origimg = img
@@ -1852,7 +2127,6 @@ def vpFromCam():
         startTime = time.time()
         sumTime = 0
         #cv2.imshow("input from cam", img)
-        #outvid.write(img)
 
         #print "Image Loaded: " + str(startTime)
 
@@ -1893,11 +2167,15 @@ def vpFromCam():
                         cv2.circle(img, (vanish2[0], vanish2[1]), 5, (10, 10, 255), thickness=2)
 
                     vanish.value = int(vanish2[0]-centre_point)
+                    vpDict['xValue'] = int(vanish2[0]-centre_point)
+
                     #print  ("vanishing point = ", vanish.value)
                 else:
                     vpValid.value = False
+                    vpDict['valid'] = False
             else:
                 vpValid.value = False
+                vpDict['valid'] = False
             #
             # print "valid vanishing point? " + str(vpValid.value)
             # print "vanishing point = " + str(vanish.value)
@@ -1905,6 +2183,7 @@ def vpFromCam():
             #cv2.imshow('vp Image', img)
 
             #time.sleep(0.25)
+
 
             if profiling:
                 duration = time.time() - startTime
@@ -1915,7 +2194,8 @@ def vpFromCam():
 
             if profiling:
                 expectedFPS.value = 1/sumTime
-                print "Expected FPS: " + str(expectedFPS.value)
+                if verbose:
+                    print "Expected FPS: " + str(expectedFPS.value)
             else:
                 expectedFPS.value = 0
 
@@ -1923,14 +2203,16 @@ def vpFromCam():
             # plt.plot(frameNumber, fps)
             # plt.pause(0.05)
 
-            if profiling:
+            if profiling and verbose:
                 print "----------------------------------------------"
 
         except Exception as e:
             pass
             #logging.error("%s", e)
 
-        #time.sleep(1)
+            #time.sleep(1)
+
+        outvid.write(img)
 
     capVid.release()
     outvid.release()
@@ -1983,8 +2265,11 @@ def varianceFilter(vpCoord, n, varx, vary):
 
     if (medVar[0] > 1000) or (medVar[1] > 150):
         vpValid.value = False
+        vpDict['valid'] = False
+
     else:
         vpValid.value = True
+        vpDict['valid'] = True
 
     return varx, vary
 
@@ -2078,12 +2363,25 @@ if __name__ == '__main__':
     mpManager = multiprocessing.Manager()
 
     wheelSpeeds = mpManager.list([0, 0])
-    porterLocation_Global = mpManager.list([0, 0])  # set location to "undefined"
+    porterLocation_Global = mpManager.list([3250, 4600])  # set location to "undefined"
     porterLocation_Local = mpManager.list([0, 0])
     porterLocation_IMU = mpManager.list([0,0])
 
     qrDict = mpManager.dict()
     vpDict = mpManager.dict()
+
+    lastQR =  multiprocessing.Value('c', "-")
+
+    qrDict['visible'] = False
+    qrDict['string'] = ""
+    qrDict['last'] = ""
+    qrDict['locX'] = 0
+    qrDict['locY'] = 0
+    qrDict['distance'] = 0
+    qrDict['orientation'] = 0
+    qrDict['centre'] = [0,0]
+
+
 
     logging.info("Starting system...")
     sysRunning = True
@@ -2196,7 +2494,7 @@ if __name__ == '__main__':
 
     if Cam_Enable:
         logging.info("Starting Cam Process")
-        cameraProcess = multiprocessing.Process(name="CAM Process", target=vpFromCam, args=())
+        cameraProcess = multiprocessing.Process(name="CAM Process", target=CameraFunction, args=(vpDict, qrDict,lastQR,))
         cameraProcess.start()
         processes.append(cameraProcess)
         logging.info("Camera Process Running - %s", str(cameraProcess))
@@ -2354,6 +2652,7 @@ if __name__ == '__main__':
                         print "Porter Location is " + str(porterLocation_Global)
                         print "Porter Orientation is " + str(porterOrientation)
                         print "Target is " + str(targetDestination)
+                        print "US sensors is " + str(USAvgDistances)
 
                     else:
                         if dataReady != False:
