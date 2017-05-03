@@ -60,6 +60,7 @@ float [] porterLocation_Global = new float[2];
 float [] porterLocation_Local = new float[2];
 float porterOrientation = 0;
 float wheelOrientation = 0;
+float imuOrientation = 0;
 float targetOrientation = 0;
 float porterYaw = 0;
 
@@ -171,8 +172,9 @@ void draw() {
           porterLocation_Global[0] = Float.parseFloat(tokens[13]);
           porterLocation_Global[1] = Float.parseFloat(tokens[14]);
 
-          porterOrientation = degrees(Float.parseFloat(tokens[18]));
+          porterOrientation = degrees(Float.parseFloat(tokens[17]));
           wheelOrientation = degrees(Float.parseFloat(tokens[23]));
+          imuOrientation = degrees(Float.parseFloat(tokens[18]));
 
           for (int i = 0; i < 4; i++) {
              h_scores[i] = int(Float.parseFloat(tokens[i+31]));
@@ -408,8 +410,8 @@ public class OrientationApplet extends PApplet {
     x = 0;
     y = 0;
 
-    x = 130 * cos(radians(porterOrientation+90));
-    y = 130 * sin(radians(porterOrientation+90));
+    x = 130 * cos(radians(imuOrientation+90));
+    y = 130 * sin(radians(imuOrientation+90));
 
     //draw porter orientation
     stroke(50,50,200);
@@ -580,7 +582,7 @@ public class FPSApplet extends PApplet {
   }
   public void setup() {
 
-    surface.setLocation(890, 0);
+    surface.setLocation(605, 0);
 
     expectedFPS = new XYChart(this);
 

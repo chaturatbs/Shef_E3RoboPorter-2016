@@ -114,9 +114,9 @@ global usCaution
 USAvgDistances = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 obstruction = False
 usCaution = False
-USThresholds = [30, 20, 40] #threasholds for treating objects as obstacles [front,side,back]
+USThresholds = [30, 20, 30] #threasholds for treating objects as obstacles [front,side,back]
 #make sure stopping distance is > usThresholds
-stoppingDistance = 30
+stoppingDistance = 20
 UShosts = 2
 maxSpeeds = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
@@ -332,7 +332,7 @@ class MultiThreadBase(threading.Thread): #Parent class for threading
 def porterTracker(exitFlag,imuEnable, porterLocation_Global, porterOrientation, wheelSpeeds, pulsesQueue, speechQueue):
 
     global AHRSmode
-    #AHRSmode = "wheel"  # can be imu or wheel. Defaults to wheel
+    AHRSmode = "wheel"  # can be imu or wheel. Defaults to wheel
     pulseData = ["", ""]  # pulses counted by the motor controller
 
     # if AHRSmode is not "imu" or "wheel":
@@ -369,6 +369,7 @@ def porterTracker(exitFlag,imuEnable, porterLocation_Global, porterOrientation, 
                 globalIMUData = imu.getIMUData()  # read the IMU data into the global variable
                 globalIMUFusion = globalIMUData["fusionPose"]  # extract AHRS fusion info NOTE
                 time.sleep(imu.IMUGetPollInterval() * 1.0 / 1000.0)  # delay to sync with the recomended poll rate of the IMU
+                orientationIMU.value = globalIMUFusion[2]
                 if AHRSmode is "imu":
                     porterOrientation.value = globalIMUFusion[2]  # get Yaw Data
 
@@ -454,12 +455,12 @@ class autoPilotThread(MultiThreadBase):
         self.looping = True #DO NOT CHANGE THIS
         self.obs = False
         self.distQuantise = 30  # path re-calculation distance
-        self.autoSpeed = 50  # autopilot movement speed
+        self.autoSpeed = 20  # autopilot movement speed
         self.turningSpeed = 10
         self.alignmentThreshold = 10  # alignment error in degrees
         self.hScores = []
         self.bestScoreIndex = 0
-        self.distThreshold = 60
+        self.distThreshold = 20
 
         self.vanishAngles = []
 
@@ -738,8 +739,8 @@ class autoPilotThread(MultiThreadBase):
                         print "Angle change is " + str(self.angleChange)
 
                         if autoPilot and not exitFlag.value:
-                            while avoidingObstacle:
-                                time.sleep(0.2)
+                            # while avoidingObstacle:
+                            #     time.sleep(0.2)
 
                             if (abs(self.angleChange) > self.alignmentThreshold):
                                 pidEnable = False
@@ -1171,7 +1172,7 @@ class debugThread(MultiThreadBase):
                     self.clientConnection.send(str(porterOrientation.value) + ",") #17
                     # AHRS # FOR VALIDATION ONLY
                     # yaw
-                    self.clientConnection.send(str(porterOrientation.value) + ",") #18
+                    self.clientConnection.send(str(orientationIMU.value) + ",") #18
 
 
                     # thread life status
@@ -1298,7 +1299,7 @@ class motorDataThread(MultiThreadBase):
         self.inputBuf = ""
         self.pulses = ["",""]
         self.obs = False
-        self.smoothBrake = False
+        self.smoothBrake = True
 
 
     def run(self):
@@ -1352,7 +1353,7 @@ class motorDataThread(MultiThreadBase):
                     logging.warning("Obstacle Detected But Safety OFF...") #give a warning, but dont do anything to stop
                     self.send_serial_data(speedVector)
             elif self.smoothBrake and usCaution:
-
+                print "smooth braking"
                 if lastSent != [0, 0]:
                     logging.info("Setting smooth speed")
                     with threadLock:
@@ -1504,6 +1505,8 @@ class usDataThread(MultiThreadBase):
         self.errorCount = 0
         self.profiling = False
 
+        self.usHistory = 0
+        self.medFiltSize = 5
 
     def getUSvector1(self):
         while not exitFlag.value:
@@ -1526,11 +1529,21 @@ class usDataThread(MultiThreadBase):
                 logging.error("%s", e)
 
     def getMaxSpeeds(self,usData):
-        aMax = 2*numpy.pi/6
-        radToRPM = 60/(2*numpy.pi)
-        for i in range(len(usData)):
-            maxSpeeds[i] = int((numpy.sqrt(aMax*((usData[i]-stoppingDistance)/100)))*radToRPM)
+        global stoppingDistance
+        global maxSpeeds
 
+        #aMax = 500
+        aMax = (2*numpy.pi*1000)/(60*0.12)
+        #radToRPM = 60/(2*numpy.pi)
+        for i in range(0,len(usData)):
+            if int(usData[i]) >= stoppingDistance:
+                #print "GOOOD!"
+                maxSpeeds[i] = int(numpy.sqrt(aMax*(((usData[i]/100) -(stoppingDistance/100)))))
+            else:
+                #print "BAD :("
+                maxSpeeds[i] = 0
+
+        print "max speeds = " + str(maxSpeeds)
 
     def run(self):
         global speedVector
@@ -1555,8 +1568,8 @@ class usDataThread(MultiThreadBase):
         while not exitFlag.value:
             try:
                 #self.getUSvector()
-                self.mAverage(7)
-                #self.getMaxSpeeds(USAvgDistances)
+                self.mAverage(11)
+                self.getMaxSpeeds(USAvgDistances)
                 self.errorCount = 0
                 #print "avg US = " + str(USAvgDistances)
 
@@ -1620,7 +1633,10 @@ class usDataThread(MultiThreadBase):
 
         except Exception as e:
             self.errorCount += 1
-            logging.error("%s", str(e))
+            logging.error("error getting us vector - %s", str(e))
+
+    def medianFilter(self):
+        pass
 
     def mAverage(self, n):
         global USAvgDistances
@@ -1643,6 +1659,7 @@ class usDataThread(MultiThreadBase):
         global dataReady
         global obstruction
         global threadLock
+        global usCaution
 
         # if safetyOn:
         try:
@@ -1659,6 +1676,7 @@ class usDataThread(MultiThreadBase):
                         obstruction = False
 
                 if (maxSpeeds[1] > abs(speedVector[0])) or (maxSpeeds[0] > abs(speedVector[0])) or (maxSpeeds[2] > abs(speedVector[0])) or (maxSpeeds[3] > abs(speedVector[0])):
+                    print("CAUTION\n")
                     usCaution = True
                 else:
                     usCaution = False
@@ -1676,6 +1694,7 @@ class usDataThread(MultiThreadBase):
 
                 if (maxSpeeds[6] > abs(speedVector[0])) or (maxSpeeds[5] > abs(speedVector[0])) or (maxSpeeds[6] > abs(speedVector[0])):
                     usCaution = True
+                    print("CAUTION\n")
                 else:
                     usCaution = False
 
@@ -1707,7 +1726,7 @@ class usDataThread(MultiThreadBase):
 
         except Exception as e:
             self.errorCount += 1
-            logging.error("%s", str(e))
+            logging.error("error in US interrupt function - %s", str(e))
 
 class ttsThread(MultiThreadBase): #text to speech thread
     def run(self):

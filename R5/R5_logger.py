@@ -19,7 +19,7 @@ from datetime import datetime
 #define variables for speed/angle/direction
 
 #set the server address and port
-HOST = "192.168.29.24" #raw_input("Please enter the server address: ") #"192.168.137.242" #"192.168.137.154"  #input("Enter the server address to connect to (default port is 5002) - ") #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
+HOST = "192.168.27.63" #raw_input("Please enter the server address: ") #"192.168.137.242" #"192.168.137.154"  #input("Enter the server address to connect to (default port is 5002) - ") #socket.gethostbyname(socket.gethostname()) #socket.gethostname()
 PORT = 5003
 
 #create a socket to connect to the server
@@ -51,8 +51,8 @@ if logToFile:
     dt = datetime.now()
     fileName = "Logfile - " + dt.strftime("%Y_%m_%d-%H%M") + ".csv"
     logFile = open(fileName, 'wb')
-    spamwriter = csv.writer(logFile, delimiter=' ',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    spamwriter = csv.writer(logFile, delimiter=' ',quotechar=' ',
+                             quoting=csv.QUOTE_MINIMAL)
 
 #while the user doesnt stop communication using "esc"...
 
@@ -62,7 +62,12 @@ while True:
     #print (data)
     try:
         if logToFile:
-            spamwriter.writerow(data)
+            #data.rstrip("")
+            #print (data[0:len(data)-1])
+            check = data.split(',')
+            #print len(check)
+            if len(check) == 38:
+                spamwriter.writerow(data[0:len(data)-1])
         viewerCon.write(data)
         #print data
 
@@ -75,5 +80,6 @@ while True:
 
         except Exception as e:
             print(str(e))
+
 
 s.close()
